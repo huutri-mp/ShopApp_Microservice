@@ -1,0 +1,61 @@
+version: "3.9"
+
+services:
+  kafka:
+    image: apache/kafka:4.1.1
+    container_name: kafka
+    hostname: kafka
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: "0"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "0@kafka:9093"
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+    volumes:
+      - ./kafka-data:/var/lib/kafka/data
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+
+  init-db:
+    image: mysql:8.0
+    container_name: init-db
+    depends_on:
+      - mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    command: >
+      sh -c "
+        sleep 10;
+        mysql -h mysql -uroot -p123456 -e 'CREATE DATABASE IF NOT EXISTS auth_service_db;';
+        mysql -h mysql -uroot -p123456 -e 'CREATE DATABASE IF NOT EXISTS cart_service_db;';
+        mysql -h mysql -uroot -p123456 -e 'CREATE DATABASE IF NOT EXISTS order_service_db;';
+        mysql -h mysql -uroot -p123456 -e 'CREATE DATABASE IF NOT EXISTS payment_service_db;';
+        mysql -h mysql -uroot -p123456 -e 'CREATE DATABASE IF NOT EXISTS product_service_db;';
+        mysql -h mysql -uroot -p123456 -e 'CREATE DATABASE IF NOT EXISTS profile_service_db;';
+      "
+
+
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongo-data:/data/db
+
