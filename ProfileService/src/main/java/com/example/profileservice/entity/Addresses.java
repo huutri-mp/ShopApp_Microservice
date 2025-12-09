@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
@@ -17,6 +18,8 @@ import java.time.LocalDateTime;
 @Builder
 @Table(name = "addresses")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@ToString
+@DynamicUpdate
 public class Addresses {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,8 +36,8 @@ public class Addresses {
     @Column(name = "contact_phone", nullable = false, length = 15)
     String contactPhone;
 
-    @Column(name = "address_line1", nullable = false, length = 255)
-    String addressLine1;
+    @Column(name = "address_line", nullable = false, length = 255)
+    String addressLine;
 
     @Column(nullable = false, length = 100)
     String wards;

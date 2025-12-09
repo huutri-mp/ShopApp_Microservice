@@ -56,6 +56,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        log.info("Authentication Filter");
         if (isPublicUrl(exchange.getRequest())) {
             return chain.filter(exchange);
         }

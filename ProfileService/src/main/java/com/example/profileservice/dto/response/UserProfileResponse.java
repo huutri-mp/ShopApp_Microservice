@@ -2,16 +2,15 @@ package com.example.profileservice.dto.response;
 
 import com.example.profileservice.entity.Addresses;
 import com.example.profileservice.enums.Gender;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import javax.management.relation.Role;
 import java.time.LocalDate;
 import java.util.List;
 
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -28,6 +27,5 @@ public class UserProfileResponse {
     String role;
     Boolean enabled;
     Boolean needsPasswordCreation;
-
     List<Addresses> addresses;
 }

@@ -6,6 +6,7 @@ import com.example.profileservice.dto.request.ProfileUpdateRequest;
 import com.example.profileservice.dto.response.UserProfileResponse;
 import com.example.profileservice.dto.response.UserProfileResponseInternal;
 import com.example.profileservice.entity.UserProfile;
+import com.example.profileservice.mapper.ProfileMapper;
 import com.example.profileservice.repository.UserProfileRepository;
 import com.example.profileservice.repository.httpClient.UploadClient;
 import com.example.profileservice.service.UserProfileService;
@@ -42,6 +43,8 @@ public class UserProfileServiceImpl implements UserProfileService {
     private KafkaTemplate<String, Object> kafkaTemplate;
     @Autowired
     private UploadClient uploadClient;
+    @Autowired
+    private ProfileMapper profileMapper;
 
     public UserProfileResponseInternal getProfileById (int userId) {
         UserProfile userProfile = userProfileRepository.findById(userId)
@@ -80,18 +83,10 @@ public class UserProfileServiceImpl implements UserProfileService {
             throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
-        UserProfile profile = UserProfile.builder()
-                .id(request.getUserId())
-                .fullName(request.getFullName())
-                .avatarUrl(request.getAvatarUrl())
-                .email(request.getEmail())
-                .phoneNumber(request.getPhoneNumber())
-                .dateOfBirth(request.getDateOfBirth())
-                .gender(request.getGender())
-                .build();
+        UserProfile userProfile = profileMapper.createProfile(request);
 
         try {
-            userProfileRepository.save(profile);
+            userProfileRepository.save(userProfile);
             log.info("Created profile for user ID: {}", request.getUserId());
         } catch (DataIntegrityViolationException e) {
             throw new AppException(ErrorCode.PROFILE_CREATION_FAILED);
@@ -126,7 +121,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         UserProfile userProfile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_FOUND));
 
-        return UserProfileResponse.builder()
+       return UserProfileResponse.builder()
                 .userId(userProfile.getId())
                 .fullName(userProfile.getFullName())
                 .email(userProfile.getEmail())
@@ -139,7 +134,7 @@ public class UserProfileServiceImpl implements UserProfileService {
                 .username( SecurityUtil.getCurrentUsername())
                 .role(SecurityUtil.getCurrentUserRole())
                 .needsPasswordCreation (SecurityUtil.needsPasswordCreation())
-                .build();
+               .build();
     }
 
     public UserProfileResponse updateUserProfile(ProfileUpdateRequest request, MultipartFile avt) {
@@ -147,23 +142,20 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         UserProfile userProfile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_FOUND));
-        if (request != null) {
-            if (request.getEmail() != null && !request.getEmail().equals(userProfile.getEmail())) {
-                String newEmail = request.getEmail();
-                if (userProfileRepository.existsUserProfileByEmail(newEmail)) {
-                    throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
-                }
-                userProfile.setEmail(newEmail);
-            }
 
-            if (request.getFullName() != null) { userProfile.setFullName(request.getFullName()); }
-            if (request.getPhoneNumber() != null) { userProfile.setPhoneNumber(request.getPhoneNumber()); }
-            if (request.getDateOfBirth() != null) { userProfile.setDateOfBirth(request.getDateOfBirth()); }
-            if (request.getGender() != null) { userProfile.setGender(request.getGender()); }
+        if (request != null && request.getEmail() != null
+                && !request.getEmail().equals(userProfile.getEmail())) {
+            if (userProfileRepository.existsUserProfileByEmail(request.getEmail())) {
+                throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
+            }
         }
-        String oldAvatarUrl = userProfile.getAvatarUrl();
+
+        if (request != null) {
+            profileMapper.updateProfile(request, userProfile);
+        }
 
         if (avt != null && !avt.isEmpty()) {
+            String oldAvatarUrl = userProfile.getAvatarUrl();
             try {
                 String url = uploadClient.uploadFile(avt, containerName);
                 userProfile.setAvatarUrl(url);

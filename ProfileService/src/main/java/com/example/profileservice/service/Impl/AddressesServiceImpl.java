@@ -7,10 +7,12 @@ import com.example.profileservice.entity.Addresses;
 import com.example.profileservice.entity.UserProfile;
 import com.example.commonlib.exception.AppException;
 import com.example.commonlib.exception.ErrorCode;
+import com.example.profileservice.mapper.AddressMapper;
 import com.example.profileservice.repository.AddressesRepository;
 import com.example.profileservice.repository.UserProfileRepository;
 import com.example.profileservice.service.AddressesService;
 import com.example.profileservice.util.SecurityUtil;
+import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
@@ -27,6 +29,8 @@ public class AddressesServiceImpl implements AddressesService {
     private AddressesRepository addressesRepository;
     @Autowired
     private UserProfileRepository userProfileRepository;
+    @Autowired
+    private AddressMapper addressMapper;
 
     public String createAddress(AddressCreationRequest request) {
         if (request == null) {
@@ -40,7 +44,7 @@ public class AddressesServiceImpl implements AddressesService {
         boolean isDuplicate = addresses.stream().anyMatch(addr ->
                 addr.getContactName().equals(request.getContactName()) &&
                         addr.getContactPhone().equals(request.getContactPhone()) &&
-                        addr.getAddressLine1().equals(request.getAddressLine1()) &&
+                        addr.getAddressLine().equals(request.getAddressLine()) &&
                         addr.getWards().equals(request.getWards()) &&
                         addr.getProvince().equals(request.getProvince())
         );
@@ -49,19 +53,8 @@ public class AddressesServiceImpl implements AddressesService {
             throw new AppException(ErrorCode.ADDRESS_ALREADY_EXISTS);
         }
 
-        addressesRepository.save(
-            Addresses.builder()
-                    .userProfile(userProfile)
-                    .contactName(request.getContactName())
-                    .contactPhone(request.getContactPhone())
-                    .addressLine1(request.getAddressLine1())
-                    .wards(request.getWards())
-                    .province(request.getProvince())
-                    .isDefault(addresses.isEmpty())
-                    .build()
-
-
-        );
+        Addresses newAddress = addressMapper.createAddress(request);
+        addressesRepository.save(newAddress);
         return "Address created successfully";
     }
 
@@ -70,30 +63,25 @@ public class AddressesServiceImpl implements AddressesService {
             throw new AppException(ErrorCode.INVALID_ADDRESS_DATA);
         }
 
-        Addresses address =  addressesRepository.findById(addressId).orElseThrow(
-            () -> new AppException(ErrorCode.ADDRESS_NOT_FOUND)
+        Addresses address = addressesRepository.findById(addressId).orElseThrow(
+                () -> new AppException(ErrorCode.ADDRESS_NOT_FOUND)
         );
 
-        if (request.getContactName() != null) {
-            address.setContactName(request.getContactName());
+        UserProfile userProfile = address.getUserProfile();
+        if (Boolean.TRUE.equals(request.getIsDefault())) {
+            List<Addresses> addresses = addressesRepository.findByUserProfile_Id(userProfile.getId());
+            for (Addresses addr : addresses) {
+                if (Boolean.TRUE.equals(addr.getIsDefault())) {
+                    addr.setIsDefault(false);
+                }
+            }
+            addressesRepository.saveAll(addresses);
+            address.setIsDefault(true);
         }
-        if (request.getContactPhone() != null) {
-            address.setContactPhone(request.getContactPhone());
-        }
-        if (request.getAddressLine1() != null) {
-            address.setAddressLine1(request.getAddressLine1());
-        }
-        if (request.getWards() != null) {
-            address.setWards(request.getWards());
-        }
-        if (request.getProvince() != null) {
-            address.setProvince(request.getProvince());
-        }
-        if (request.getIsDefault() != null) {
-            address.setIsDefault(request.getIsDefault());
-        }
-        
+
+        addressMapper.updateAddress(request, address);
         addressesRepository.save(address);
+
         return "Address updated successfully";
     }
 
@@ -111,7 +99,7 @@ public class AddressesServiceImpl implements AddressesService {
         return AddressResponse.builder()
                 .contactName(address.getContactName())
                 .contactPhone(address.getContactPhone())
-                .addressLine1(address.getAddressLine1())
+                .addressLine(address.getAddressLine())
                 .wards(address.getWards())
                 .province(address.getProvince())
                 .isDefault(address.getIsDefault() != null ? address.getIsDefault() : false)
@@ -142,6 +130,5 @@ public class AddressesServiceImpl implements AddressesService {
         addressesRepository.delete(address);
         return "Address deleted successfully";
     }
-
 
 }

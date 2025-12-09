@@ -21,9 +21,8 @@ public class AddressCreationRequest {
     @Pattern(regexp = "^[0-9]{10,15}$", message = "Số điện thoại không hợp lệ")
     String contactPhone;
 
-    @NotBlank(message = "Địa chỉ dòng 1 không được để trống")
-    @Size(max = 255, message = "Địa chỉ dòng 1 không vượt quá 255 ký tự")
-    String addressLine1;
+    @NotBlank(message = "Địa chỉ không được để trống")
+    String addressLine;
 
     @NotBlank(message = "Thành phố không được để trống")
     @Size(max = 100, message = "Tên thành phố không vượt quá 100 ký tự")

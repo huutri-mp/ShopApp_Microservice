@@ -16,7 +16,7 @@ public class AddressResponse {
     Integer addressId;
     String contactName;
     String contactPhone;
-    String addressLine1;
+    String addressLine;
     String wards;
     String province;
     String country;

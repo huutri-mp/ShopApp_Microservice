@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
@@ -18,6 +19,7 @@ import java.util.List;
 @Builder
 @ToString
 @Table(name = "user_profiles")
+@DynamicUpdate
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserProfile {
 
@@ -59,7 +61,6 @@ public class UserProfile {
     List<Addresses> addresses;
 
 
-    // Helper method để quản lý quan hệ hai chiều
     public void addAddress(Addresses address) {
         addresses.add(address);
         address.setUserProfile(this);
