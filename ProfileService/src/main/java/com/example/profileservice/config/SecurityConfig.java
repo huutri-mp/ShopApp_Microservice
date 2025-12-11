@@ -17,7 +17,6 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 
 @Configuration
 @EnableWebSecurity
@@ -60,10 +59,6 @@ public class SecurityConfig {
                 )
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .httpBasic(httpBasic -> httpBasic
-                        .authenticationEntryPoint(basicAuthenticationEntryPoint())
-                        .realmName("Profile Service Internal API")
-                )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwtConfigurer -> jwtConfigurer
                                 .decoder(customJwtDecoder)
@@ -86,13 +81,6 @@ public class SecurityConfig {
     }
 
     @Bean
-    public BasicAuthenticationEntryPoint basicAuthenticationEntryPoint() {
-        BasicAuthenticationEntryPoint entryPoint = new BasicAuthenticationEntryPoint();
-        entryPoint.setRealmName("Profile Service Internal API");
-        return entryPoint;
-    }
-
-    @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
         authoritiesConverter.setAuthorityPrefix("");
@@ -103,11 +91,6 @@ public class SecurityConfig {
         return jwtConverter;
     }
 
-    public static class JwtAuthenticationEntryPoint extends BasicAuthenticationEntryPoint {
-        public JwtAuthenticationEntryPoint() {
-            setRealmName("Profile Service");
-        }
-    }
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(10);

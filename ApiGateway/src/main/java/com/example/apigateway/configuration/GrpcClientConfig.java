@@ -1,26 +1,32 @@
 package com.example.apigateway.configuration;
 
-import com.example.apigateway.repository.AuthClient;
+import auth.AuthServiceGrpc;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.cors.reactive.CorsWebFilter;
-import org.springframework.web.reactive.function.client.support.WebClientAdapter;
-import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
 
 @Configuration
-public class WebClientConfig {
+public class GrpcClientConfig {
 
     @Bean
-    public WebClient webClient(@Value("${auth.service.url}") String authServiceUrl) {
-        return WebClient.builder()
-                .baseUrl(authServiceUrl)
+    public ManagedChannel authServiceChannel(
+            @Value("${auth.service.grpc.host}") String host,
+            @Value("${auth.service.grpc.port}") int port) {
+        return ManagedChannelBuilder.forAddress(host, port)
+                .usePlaintext()
                 .build();
+    }
+
+    @Bean
+    public AuthServiceGrpc.AuthServiceBlockingStub authServiceStub(ManagedChannel authServiceChannel) {
+        return AuthServiceGrpc.newBlockingStub(authServiceChannel);
     }
 
     @Bean
@@ -35,14 +41,6 @@ public class WebClientConfig {
         source.registerCorsConfiguration("/**", corsConfig);
 
         return new CorsWebFilter(source);
-    }
-
-
-    @Bean
-    public AuthClient authClient(WebClient webClient) {
-        HttpServiceProxyFactory factory =
-                HttpServiceProxyFactory.builderFor(WebClientAdapter.create(webClient)).build();
-        return factory.createClient(AuthClient.class);
     }
 }
 

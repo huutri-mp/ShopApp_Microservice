@@ -8,7 +8,7 @@ import com.example.profileservice.dto.response.UserProfileResponseInternal;
 import com.example.profileservice.entity.UserProfile;
 import com.example.profileservice.mapper.ProfileMapper;
 import com.example.profileservice.repository.UserProfileRepository;
-import com.example.profileservice.repository.httpClient.UploadClient;
+import com.example.profileservice.repository.gRPC.UploadGrpcClient;
 import com.example.profileservice.service.UserProfileService;
 import com.example.profileservice.util.SecurityUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +42,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     @Autowired
     private KafkaTemplate<String, Object> kafkaTemplate;
     @Autowired
-    private UploadClient uploadClient;
+    private UploadGrpcClient uploadClient;
     @Autowired
     private ProfileMapper profileMapper;
 

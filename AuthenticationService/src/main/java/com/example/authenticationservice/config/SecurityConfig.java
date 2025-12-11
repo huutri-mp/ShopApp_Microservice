@@ -35,12 +35,6 @@ public class SecurityConfig {
             "/api/v1/internal/auth/**"
     };
 
-    @Value("${auth.username}")
-    private String authUsername;
-
-    @Value("${auth.password}")
-    private String authPassword;
-
     private final CustomJwtDecoder customJwtDecoder;
 
     public SecurityConfig(CustomJwtDecoder customJwtDecoder) {
@@ -66,10 +60,6 @@ public class SecurityConfig {
                 )
 
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .httpBasic(httpBasic -> httpBasic
-                        .authenticationEntryPoint(basicAuthenticationEntryPoint())
-                        .realmName("Authen Service Internal API")
-                )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwtConfigurer -> jwtConfigurer
                                 .decoder(customJwtDecoder)
@@ -79,20 +69,6 @@ public class SecurityConfig {
                 );
 
         return httpSecurity.build();
-    }
-    @Bean
-    public BasicAuthenticationEntryPoint basicAuthenticationEntryPoint() {
-        BasicAuthenticationEntryPoint entryPoint = new BasicAuthenticationEntryPoint();
-        entryPoint.setRealmName("Authen Service Internal API");
-        return entryPoint;
-    }
-    @Bean
-    public InMemoryUserDetailsManager internalUserDetailsService(PasswordEncoder passwordEncoder) {
-        UserDetails serviceUser = User.withUsername(authUsername)
-                .password(passwordEncoder.encode(authPassword))
-                .roles("INTERNAL_SERVICE")
-                .build();
-        return new InMemoryUserDetailsManager(serviceUser);
     }
 
     @Bean

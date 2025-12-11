@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package profile;
+
+option java_multiple_files = true;
+option java_package = "profile";
+option java_outer_classname = "ProfileProto";
+
+service ProfileService {
+  rpc CreateProfile(CreateProfileRequest) returns (CreateProfileResponse);
+  rpc CheckEmailExists(CheckEmailRequest) returns (CheckEmailResponse);
+  rpc GetProfile(GetProfileRequest) returns (ProfileGrpcResponse);
+  rpc GetProfileByEmail(GetProfileByEmailRequest) returns (ProfileGrpcResponse);
+}
+
+message CreateProfileRequest {
+  int32 userId = 1;
+  string fullName = 2;
+  string email = 3;
+  string phoneNumber = 4;
+  string dateOfBirth = 5;
+  string gender = 6;
+  string avatarUrl = 7;
+}
+
+message CreateProfileResponse {
+  string message = 1;
+}
+
+message CheckEmailRequest {
+  string email = 1;
+}
+
+message CheckEmailResponse {
+  bool exists = 1;
+}
+
+message GetProfileRequest {
+  int32 userId = 1;
+}
+
+message GetProfileByEmailRequest {
+  string email = 1;
+}
+
+message ProfileGrpcResponse {
+  int32 userId = 1;
+  string fullName = 2;
+  string email = 3;
+  string phoneNumber = 4;
+  string gender = 5;
+  string dateOfBirth = 6;
+}

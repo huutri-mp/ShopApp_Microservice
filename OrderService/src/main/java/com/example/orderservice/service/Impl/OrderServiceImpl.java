@@ -1,6 +1,6 @@
 package com.example.orderservice.service.Impl;
 
-import com.example.event.dto.NotificationEvent;
+import com.example.commonlib.dto.NotificationEvent;
 import com.example.orderservice.dto.request.OrderRequest;
 import com.example.orderservice.dto.request.RemoveCartItemRequest;
 import com.example.orderservice.dto.response.*;

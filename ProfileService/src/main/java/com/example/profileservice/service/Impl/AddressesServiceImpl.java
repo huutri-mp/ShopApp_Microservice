@@ -12,7 +12,6 @@ import com.example.profileservice.repository.AddressesRepository;
 import com.example.profileservice.repository.UserProfileRepository;
 import com.example.profileservice.service.AddressesService;
 import com.example.profileservice.util.SecurityUtil;
-import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
@@ -53,7 +52,14 @@ public class AddressesServiceImpl implements AddressesService {
             throw new AppException(ErrorCode.ADDRESS_ALREADY_EXISTS);
         }
 
+        if (request.getIsDefault()) {
+            for (Addresses addr : addresses) {
+                addr.setIsDefault(false);
+            }
+        }
+
         Addresses newAddress = addressMapper.createAddress(request);
+        newAddress.setUserProfile(userProfile);
         addressesRepository.save(newAddress);
         return "Address created successfully";
     }

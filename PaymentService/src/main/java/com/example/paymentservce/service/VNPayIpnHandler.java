@@ -1,7 +1,7 @@
 package com.example.paymentservce.service;
 
 
-import com.example.event.dto.NotificationEvent;
+import com.example.commonlib.dto.NotificationEvent;
 import com.example.paymentservce.constan.VNPayParams;
 import com.example.paymentservce.constan.VnpIpnResponseConst;
 import com.example.paymentservce.dto.response.InternalOrderResponse;

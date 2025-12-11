@@ -1,10 +1,9 @@
 package com.example.profileservice.controller;
 
 import com.example.commonlib.dto.ApiResponse;
-import com.example.profileservice.constan.UrlConstant;
+import com.example.profileservice.constant.UrlConstant;
 import com.example.profileservice.dto.request.AddressCreationRequest;
 import com.example.profileservice.dto.request.AddressUpdateRequest;
-import com.example.profileservice.entity.Addresses;
 import com.example.profileservice.service.AddressesService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

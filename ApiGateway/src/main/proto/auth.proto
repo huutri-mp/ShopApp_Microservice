@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package auth;
+
+service AuthService {
+  rpc Introspect(IntrospectRequest) returns (IntrospectResponse);
+}
+
+message IntrospectRequest {
+  string token = 1;
+}
+
+message IntrospectResponse {
+  bool valid = 1;
+}

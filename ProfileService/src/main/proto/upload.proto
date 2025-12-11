@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option java_package = "upload";
+option java_multiple_files = true;
+
+service UploadService {
+  rpc UploadFile (UploadFileRequest) returns (UploadFileResponse);
+  rpc DeleteFile (DeleteFileRequest) returns (DeleteFileResponse);
+}
+
+message UploadFileRequest {
+  string fileName = 1;
+  string containerName = 2;
+  bytes content = 3;
+}
+
+message UploadFileResponse {
+  string url = 1;
+}
+
+message DeleteFileRequest {
+  string fileLink = 1;
+}
+
+message DeleteFileResponse {
+  bool success = 1;
+  string message = 2;
+}

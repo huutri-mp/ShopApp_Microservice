@@ -11,12 +11,12 @@ import com.example.commonlib.exception.ErrorCode;
 import com.example.commonlib.dto.NotificationEvent;
 import com.example.authenticationservice.repository.AuthRepository;
 import com.example.authenticationservice.repository.InvalidatedTokenRepository;
-import com.example.authenticationservice.repository.httpClient.*;
+import com.example.authenticationservice.repository.gRPCClient.*;
+import com.example.authenticationservice.repository.gRPCClient.ProfileGrpcClient;
 import com.example.authenticationservice.utill.JwtUtil;
 import com.nimbusds.jose.JOSEException;
 import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -43,9 +43,9 @@ public class AuthenServiceImpl implements AuthService {
     @Autowired
     private RefreshTokenService refreshTokenService;
     @Autowired
-    private ProfileClient profileClient;
+    private ProfileGrpcClient profileGrpcClient;
     @Autowired
-    private UploadClient uploadClient;
+    private UploadGrpcClient uploadClient;
     @Autowired
     private PasswordEncoder passwordEncoder;
     @Autowired
@@ -76,7 +76,7 @@ public class AuthenServiceImpl implements AuthService {
         if(authRepository.existsUserByUserName(request.getUserName())) {
             throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS);
         }
-        if(profileClient.checkEmailExists(request.getEmail()).getBody() == true) {
+        if(profileGrpcClient.checkEmailExists(request.getEmail()) == true) {
             throw  new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
         AuthenUser authenUser = AuthenUser.builder()
@@ -85,7 +85,6 @@ public class AuthenServiceImpl implements AuthService {
                 .role(request.getRole() == null ? "USER" : request.getRole())
                 .enabled(true)
                 .build();
-
 
         authRepository.saveAndFlush(authenUser);
         log.info("User ID: {}", authenUser.getId());
@@ -101,7 +100,7 @@ public class AuthenServiceImpl implements AuthService {
 
         ProfileCreationRequest profileCreationRequest = ProfileCreationRequest.builder()
                 .userId(authenUser.getId())
-                .fullName(request.getFullname())
+                .fullName(request.getFullName())
                 .email(request.getEmail())
                 .avatarUrl(avtUrl)
                 .phoneNumber(request.getPhoneNumber())
@@ -111,7 +110,7 @@ public class AuthenServiceImpl implements AuthService {
 
         System.out.println( "profile create"+ profileCreationRequest);
         try {
-            profileClient.createProfile(profileCreationRequest);
+            profileGrpcClient.createProfile(profileCreationRequest);
         } catch (Exception e) {
             authRepository.delete(authenUser);
             log.error("Failed to create profile", e);
@@ -236,7 +235,7 @@ public class AuthenServiceImpl implements AuthService {
 
         // Kiểm tra hoặc tạo user
         AuthenUser authenUser;
-        if (profileClient.checkEmailExists(userInfo.getEmail()).getBody() == false
+        if (profileGrpcClient.checkEmailExists(userInfo.getEmail()) == false
                 && !checkUserNameExists(userInfo.getEmail())) {
             authenUser = AuthenUser.builder()
                     .userName(userInfo.getEmail())
@@ -251,7 +250,7 @@ public class AuthenServiceImpl implements AuthService {
                     .avatarUrl(userInfo.getPicture())
                     .build();
             try {
-                profileClient.createProfile(profileCreationRequest);
+                profileGrpcClient.createProfile(profileCreationRequest);
             } catch (Exception e) {
                 authRepository.delete(authenUser);
                 log.error("Failed to create profile", e);
@@ -261,7 +260,7 @@ public class AuthenServiceImpl implements AuthService {
         }
         else {
             String email = userInfo.getEmail();
-            UserProfileResponseInternal profileResponse = profileClient.getProfileByEmail(email).getBody();
+            UserProfileResponseInternal profileResponse = profileGrpcClient.getProfileByEmail(email);
             int userId = profileResponse.getUserId();
             authenUser = authRepository.getUserById(userId);
         }
@@ -274,11 +273,11 @@ public class AuthenServiceImpl implements AuthService {
     }
 
     public String changePassword(ChangePasswordRequest request) {
+        log.info("Change password request: {}", request);
         if (request == null || request.getNewPassword() == null) {
             throw new AppException(ErrorCode.INVALID_REQUEST);
         }
         String userName = SecurityContextHolder.getContext().getAuthentication().getName();
-        System.out.println("hehe" + SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString());
         AuthenUser authenUser = authRepository.findByUserName(userName);
         if (authenUser == null) {
             throw new AppException(ErrorCode.USER_NOT_FOUND);
@@ -294,7 +293,7 @@ public class AuthenServiceImpl implements AuthService {
         authenUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
         authenUser.setLastPasswordChange(LocalDate.now());
 
-        UserProfileResponseInternal userProfileResponseInternal = profileClient.getProfile(authenUser.getId()).getBody();
+        UserProfileResponseInternal userProfileResponseInternal = profileGrpcClient.getProfile(authenUser.getId());
         authRepository.save(authenUser);
         Map<String, Object> data = new HashMap<>();
         data.put("fullName", userName);

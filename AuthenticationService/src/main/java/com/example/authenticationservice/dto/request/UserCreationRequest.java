@@ -29,9 +29,8 @@ public class UserCreationRequest {
     @Size(min = 9, max = 12)
     String phoneNumber;
 
-    @NotBlank(message = "Full name cannot be blank")
     @Size(min = 2, max = 50, message = "Full name must be between 2 and 50 characters")
-    String fullname;
+    String fullName;
 
     LocalDate dateOfBirth;
 

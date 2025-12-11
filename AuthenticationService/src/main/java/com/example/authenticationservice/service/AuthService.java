@@ -3,7 +3,6 @@ package com.example.authenticationservice.service;
 import com.example.authenticationservice.dto.request.*;
 import com.example.authenticationservice.dto.response.IntrospectResponse;
 import com.example.authenticationservice.dto.response.LoginResponse;
-import com.example.authenticationservice.entity.AuthenUser;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 

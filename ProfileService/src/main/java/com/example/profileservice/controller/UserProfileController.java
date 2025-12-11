@@ -1,13 +1,12 @@
 package com.example.profileservice.controller;
 
 import com.example.commonlib.dto.ApiResponse;
-import com.example.profileservice.constan.UrlConstant;
+import com.example.profileservice.constant.UrlConstant;
 import com.example.profileservice.dto.request.ProfileUpdateRequest;
 import com.example.profileservice.dto.response.UserProfileResponse;
 import com.example.profileservice.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;

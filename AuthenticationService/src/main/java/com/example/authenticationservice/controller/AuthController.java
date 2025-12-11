@@ -1,6 +1,6 @@
 package com.example.authenticationservice.controller;
 
-import com.example.authenticationservice.constan.UrlConstan;
+import com.example.authenticationservice.constant.UrlConstan;
 import com.example.authenticationservice.dto.request.*;
 import com.example.authenticationservice.dto.response.LoginResponse;
 import com.example.authenticationservice.service.AuthService;
@@ -41,8 +41,9 @@ public class AuthController {
 
     @PostMapping("/register")
     public ApiResponse<String> register(
-            @RequestPart ("userData") @Validated UserCreationRequest request,
+            @RequestPart ("userData")  UserCreationRequest request,
             @RequestPart (value = "avt", required = false) MultipartFile avt ) {
+        log.info("Register request: {}", request.getUserName(), request.getEmail(), request.getFullName());
         String response = authService.createUser(request, avt);
         ApiResponse<String> apiResponse = new ApiResponse<>();
         apiResponse.setMessage(response);
