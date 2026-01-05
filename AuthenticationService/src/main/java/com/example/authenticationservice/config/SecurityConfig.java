@@ -50,8 +50,7 @@ public class SecurityConfig {
                         .ignoringRequestMatchers(
                         "/api/v1/auth/register",
                           "/api/v1/auth/login",
-                          "/api/v1/auth/outbound/authentication",
-                          "/api/v1/internal/auth/**")
+                          "/api/v1/auth/outbound/authentication")
                 )
                 .authorizeHttpRequests(request -> request
                     .requestMatchers(PUBLIC_ENDPOINTS).permitAll()

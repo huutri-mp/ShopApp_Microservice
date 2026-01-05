@@ -47,6 +47,7 @@ public class JwtUtil {
                     .claim("username", user.getUserName())
                     .claim("role", user.getRole())
                     .claim("needsPassword", user.getPassword() == null)
+                    .claim("enabled", user.getEnabled())
                     .build();
 
             // 3. Sign the token

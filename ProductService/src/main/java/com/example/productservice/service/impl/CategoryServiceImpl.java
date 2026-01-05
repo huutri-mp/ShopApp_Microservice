@@ -1,5 +1,7 @@
 package com.example.productservice.service.impl;
 
+import com.example.commonlib.dto.PagingResponse;
+import com.example.productservice.mapper.CategoryMapper;
 import com.example.productservice.dto.request.CategoryRequest;
 import com.example.productservice.dto.response.CategoryResponse;
 import com.example.productservice.entity.Category;
@@ -10,43 +12,33 @@ import com.example.productservice.service.CategoryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @Primary
 @Slf4j
+
 public class CategoryServiceImpl implements CategoryService {
     @Autowired
     private CategoryRepository categoryRepository;
 
-    public List<CategoryResponse> getAllCategories() {
-        List<Category> categories = categoryRepository.findAll();
-        return categories.stream()
-                .map(category -> CategoryResponse.builder()
-                        .id(category.getId())
-                        .name(category.getName())
-                        .description(category.getDescription())
-                        .build())
-                .toList();
-    }
+    @Autowired
+    private CategoryMapper categoryMapper;
 
-    public CategoryResponse getCategoryById(Integer categoryId) {
-        Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
-        return CategoryResponse.builder()
-                .id(category.getId())
-                .name(category.getName())
-                .description(category.getDescription())
-                .build();
-    }
+    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
+    @Override
+    public CategoryResponse createCategory(CategoryRequest request) {
 
-    public String createCategory(CategoryRequest request) {
-        if (request == null) {
-            throw new AppException(ErrorCode.INVALID_REQUEST);
-        }
-        if (request.getName() == null || request.getName().isEmpty()) {
+        if (request.getName() == null || request.getName().isBlank()) {
             throw new AppException(ErrorCode.INVALID_CATEGORY_NAME);
         }
 
@@ -54,43 +46,119 @@ public class CategoryServiceImpl implements CategoryService {
             throw new AppException(ErrorCode.CATEGORY_ALREADY_EXISTS);
         }
 
+        Category parent = null;
+        if (request.getParentId() != null) {
+            parent = categoryRepository.findById(request.getParentId())
+                    .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+        }
+
         Category category = Category.builder()
                 .name(request.getName())
-                .description(request.getDescription())
+                .parent(parent)
                 .build();
+
         categoryRepository.save(category);
-        return "Category created successfully";
+
+        return categoryMapper.toCategoryResponse(category);
     }
 
-    public String updateCategory(Integer categoryId, CategoryRequest request) {
-        if (request == null) {
-            throw new AppException(ErrorCode.INVALID_REQUEST);
-        }
-
-        Category category = categoryRepository.findById(categoryId)
+    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
+    @Override
+    public CategoryResponse updateCategory(Long id, CategoryRequest request) {
+        Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
 
-        if (categoryRepository.existsByName(request.getName())) {
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new AppException(ErrorCode.INVALID_CATEGORY_NAME);
+        }
+
+        if (categoryRepository.existsByNameAndIdNot(request.getName(), id)) {
             throw new AppException(ErrorCode.CATEGORY_ALREADY_EXISTS);
         }
-        if(request.getName() != null){
-            category.setName(request.getName());
+
+        category.setName(request.getName());
+
+        if (request.getParentId() != null) {
+            Category parent = categoryRepository.findById(request.getParentId())
+                    .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+
+            category.setParent(parent);
         }
-        if(request.getDescription() != null){
-            category.setDescription(request.getDescription());
-        }
+
         categoryRepository.save(category);
-        return "Category updated successfully";
+
+        return categoryMapper.toCategoryResponse(category);
     }
-    public String deleteCategory(Integer categoryId) {
-        Category category = categoryRepository.findById(categoryId)
+
+    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
+    @Override
+    public void deleteCategory(Long id) {
+        Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
 
+        if (categoryRepository.existsByParent_Id(id)) {
+            throw new AppException(ErrorCode.INVALID_CATEGORY_NAME);
+        }
+
         categoryRepository.delete(category);
-        return "Category deleted successfully";
     }
 
+    @Override
+    public CategoryResponse getCategoryById(Long id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+        return categoryMapper.toCategoryResponse(category);
+    }
 
+    @Override
+    public PagingResponse<CategoryResponse> getCategories(
+            Integer page,
+            Integer size,
+            String keyword,
+            Boolean isDesc
+    ) {
+        Sort sort = Boolean.TRUE.equals(isDesc)
+                ? Sort.by("name").descending()
+                : Sort.by("name").ascending();
+
+        Specification<Category> spec = (root, query, cb) -> {
+            if (keyword == null || keyword.isBlank()) {
+                return cb.conjunction();
+            }
+            return cb.like(
+                    cb.lower(root.get("name")),
+                    "%" + keyword.toLowerCase() + "%"
+            );
+        };
+
+        if (page == null || size == null) {
+            List<Category> categories = categoryRepository.findAll(spec, sort);
+
+            return PagingResponse.<CategoryResponse>builder()
+                    .items(categories.stream()
+                            .map(categoryMapper::toCategoryResponse)
+                            .toList())
+                    .total(categories.size())
+                    .build();
+        }
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<Category> categoryPage =
+                categoryRepository.findAll(spec, pageable);
+
+        return PagingResponse.<CategoryResponse>builder()
+                .items(categoryPage.getContent()
+                        .stream()
+                        .map(categoryMapper::toCategoryResponse)
+                        .toList())
+                .total(categoryPage.getTotalElements())
+                .page(page)
+                .size(size)
+                .hasNext(categoryPage.hasNext())
+                .hasPrev(categoryPage.hasPrevious())
+                .build();
+    }
 
 
 }

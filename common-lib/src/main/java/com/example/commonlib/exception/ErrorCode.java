@@ -64,6 +64,9 @@ public enum ErrorCode {
     // --- Lỗi sản phẩm ---
     PRODUCT_INFO_UNAVAILABLE(6001, "Thông tin sản phẩm không khả dụng", HttpStatus.SERVICE_UNAVAILABLE),
     PRODUCT_NOT_AVAILABLE(6002, "Sản phẩm không khả dụng", HttpStatus.NOT_FOUND),
+    BRAND_NOT_FOUND(6003, "Không tìm thấy nhãn hàng", HttpStatus.NOT_FOUND),
+
+
     VNPAY_SIGNING_FAILED(7001, "Ký VNPAY thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // --- Lỗi danh mục & sản phẩm ---

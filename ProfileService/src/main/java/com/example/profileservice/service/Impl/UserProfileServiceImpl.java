@@ -1,6 +1,7 @@
 package com.example.profileservice.service.Impl;
 
 import com.example.commonlib.dto.NotificationEvent;
+import com.example.commonlib.dto.PagingResponse;
 import com.example.profileservice.dto.request.ProfileCreationRequest;
 import com.example.profileservice.dto.request.ProfileUpdateRequest;
 import com.example.profileservice.dto.response.UserProfileResponse;
@@ -8,15 +9,23 @@ import com.example.profileservice.dto.response.UserProfileResponseInternal;
 import com.example.profileservice.entity.UserProfile;
 import com.example.profileservice.mapper.ProfileMapper;
 import com.example.profileservice.repository.UserProfileRepository;
+import com.example.profileservice.repository.gRPC.AuthGrpcClient;
 import com.example.profileservice.repository.gRPC.UploadGrpcClient;
 import com.example.profileservice.service.UserProfileService;
 import com.example.profileservice.util.SecurityUtil;
+import jakarta.persistence.criteria.JoinType;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -26,25 +35,24 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import com.example.commonlib.exception.AppException;
 import com.example.commonlib.exception.ErrorCode;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 
 @Service
 @Primary
 @Slf4j
+@RequiredArgsConstructor
 public class UserProfileServiceImpl implements UserProfileService {
 
     @Value("${azure.storage.container-name}")
     private String containerName;
 
-    @Autowired
-    private UserProfileRepository userProfileRepository;
-    @Autowired
-    private KafkaTemplate<String, Object> kafkaTemplate;
-    @Autowired
-    private UploadGrpcClient uploadClient;
-    @Autowired
-    private ProfileMapper profileMapper;
+    private final UserProfileRepository userProfileRepository;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final UploadGrpcClient uploadClient;
+    private final AuthGrpcClient authGrpcClient;
+    private final ProfileMapper profileMapper;
 
     public UserProfileResponseInternal getProfileById (int userId) {
         UserProfile userProfile = userProfileRepository.findById(userId)
@@ -137,8 +145,8 @@ public class UserProfileServiceImpl implements UserProfileService {
                .build();
     }
 
-    public UserProfileResponse updateUserProfile(ProfileUpdateRequest request, MultipartFile avt) {
-        Integer userId = SecurityUtil.getCurrentUserId();
+    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN' or #userId == authentication.principal.claims['userId']")
+    public UserProfileResponse updateUserProfile(int userId,ProfileUpdateRequest request, MultipartFile avt) {
 
         UserProfile userProfile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_FOUND));
@@ -167,7 +175,6 @@ public class UserProfileServiceImpl implements UserProfileService {
                     }
                 }
             } catch (Exception e) {
-                log.error("Failed to upload new avatar file.", e);
                 throw e;
             }
         }
@@ -202,22 +209,49 @@ public class UserProfileServiceImpl implements UserProfileService {
                 .build();
     }
 
-    public List<UserProfileResponse> getAllUserProfiles() {
-        return userProfileRepository.findAll().stream()
-                .map(userProfile -> UserProfileResponse.builder()
-                        .fullName(userProfile.getFullName())
-                        .email(userProfile.getEmail())
-                        .phoneNumber(userProfile.getPhoneNumber())
-                        .dateOfBirth(userProfile.getDateOfBirth())
-                        .build())
-                .collect(Collectors.toList());
+    public List<UserProfileResponse> getUserProfilesInternal(String keyword) {
+        Pageable pageable = PageRequest.of(0, 500);
+
+        Specification<UserProfile> spec = (root, query, cb) -> {
+            query.distinct(true);
+            root.fetch("addresses", JoinType.LEFT);
+
+            if (keyword == null || keyword.isBlank()) {
+                return cb.conjunction();
+            }
+
+            String pattern = "%" + keyword.toLowerCase() + "%";
+
+            return cb.or(
+                    cb.like(cb.lower(root.get("fullName")), pattern),
+                    cb.like(cb.lower(root.get("email")), pattern),
+                    cb.like(cb.lower(root.get("phoneNumber")), pattern)
+            );
+        };
+
+        List<UserProfile> profiles = userProfileRepository
+                .findAll(spec, pageable)
+                .getContent();
+
+        return profiles.stream()
+                .map(profileMapper::toResponse)
+                .toList();
     }
 
+    @Transactional
+    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
     public String deleteUserProfile(Integer userId) {
         UserProfile userProfile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_FOUND));
 
+        try {
+            authGrpcClient.deleteUser(userId);
+        } catch (Exception e) {
+            throw e;
+        }
+
         userProfileRepository.delete(userProfile);
+
         return "User profile deleted successfully";
     }
 

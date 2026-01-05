@@ -3,6 +3,7 @@ package com.example.apigateway.configuration;
 import auth.AuthServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import profile.ProfileServiceGrpc;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.cors.reactive.CorsWebFilter;
@@ -24,9 +25,23 @@ public class GrpcClientConfig {
                 .build();
     }
 
+        @Bean
+        public ManagedChannel profileServiceChannel(
+            @Value("${profile.service.grpc.host}") String host,
+            @Value("${profile.service.grpc.port}") int port) {
+        return ManagedChannelBuilder.forAddress(host, port)
+            .usePlaintext()
+            .build();
+        }
+
     @Bean
     public AuthServiceGrpc.AuthServiceBlockingStub authServiceStub(ManagedChannel authServiceChannel) {
         return AuthServiceGrpc.newBlockingStub(authServiceChannel);
+    }
+
+    @Bean
+    public ProfileServiceGrpc.ProfileServiceBlockingStub profileServiceStub(ManagedChannel profileServiceChannel) {
+        return ProfileServiceGrpc.newBlockingStub(profileServiceChannel);
     }
 
     @Bean

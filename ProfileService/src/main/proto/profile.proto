@@ -12,15 +12,13 @@ service ProfileService {
   rpc CheckEmailExists(CheckEmailRequest) returns (CheckEmailResponse);
   rpc GetProfile(GetProfileRequest) returns (ProfileGrpcResponse);
   rpc GetProfileByEmail(GetProfileByEmailRequest) returns (ProfileGrpcResponse);
+  rpc GetUserProfiles(GetUserProfilesRequest) returns (GetUserProfilesResponse);
 }
 
-// Address Service
 service AddressService {
   rpc GetAddressById(GetAddressByIdRequest) returns (AddressGrpcResponse);
   rpc CheckAddress(CheckAddressRequest) returns (CheckAddressResponse);
 }
-
-// ==================== Profile Messages ====================
 
 message CreateProfileRequest {
   int32 userId = 1;
@@ -59,9 +57,16 @@ message ProfileGrpcResponse {
   string phoneNumber = 4;
   string gender = 5;
   string dateOfBirth = 6;
+  string avatar = 7;
 }
 
-// ==================== Address Messages ====================
+message GetUserProfilesRequest {
+  string keywork = 1;
+}
+
+message GetUserProfilesResponse {
+  repeated ProfileGrpcResponse items = 1;
+}
 
 message GetAddressByIdRequest {
   int32 addressId = 1;

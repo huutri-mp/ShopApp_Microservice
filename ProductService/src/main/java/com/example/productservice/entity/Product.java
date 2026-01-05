@@ -1,52 +1,53 @@
 package com.example.productservice.entity;
 
+import com.example.productservice.util.BaseEntityWithSlug;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import jakarta.validation.constraints.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Table(name = "products")
+@Getter @Setter @Builder
+@NoArgsConstructor @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Product {
+public class Product extends BaseEntityWithSlug {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    int id;
+    Long id;
 
-    @NotBlank(message = "Tên sản phẩm không được để trống")
-    @Size(max = 255, message = "Tên sản phẩm không vượt quá 255 ký tự")
+    @Column(nullable = false)
     String name;
-    @Size(max = 1000, message = "Mô tả không vượt quá 1000 ký tự")
+
+    @Override
+    protected String getSlugSource() {
+        return name;
+    }
+
+    @Column(columnDefinition = "TEXT")
     String description;
-    @NotNull(message = "Giá sản phẩm không được để trống")
-    double price;
 
-    @NotNull(message = "Giá gốc không được để trống")
-    double originalPrice;
-    @NotNull(message = "Số lượng không được để trống")
-    @Min(value = 0, message = "Số lượng không được âm")
-    int quantity;
-    @Size(max = 100, message = "Tên thương hiệu không vượt quá 100 ký tự")
-    String brand;
+    Boolean active;
 
-    @ManyToOne
-    @JoinColumn(name = "category_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
     Category category;
 
-    String status;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "brand_id")
+    Brand brand;
 
-    @CreationTimestamp
-    @Column(name = "created_at")
-    String createdAt;
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    List<ProductImage> images = new ArrayList<>();
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    String updatedAt;
-
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    List<ProductVariant> variants = new ArrayList<>();
 }

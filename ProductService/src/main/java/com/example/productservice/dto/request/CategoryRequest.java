@@ -12,9 +12,6 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CategoryRequest {
-    @Size(max = 255, message = "Product name cannot exceed 255 characters")
-    String name;
-
-    @Size(max = 1000, message = "Description cannot exceed 1000 characters")
-    String description;
+     String name;
+     Long parentId;
 }

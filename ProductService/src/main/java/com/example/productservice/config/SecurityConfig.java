@@ -1,5 +1,6 @@
 package com.example.productservice.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,25 +22,14 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationEn
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@Slf4j
 public class SecurityConfig {
-
-    // Các endpoint internal dùng Basic Auth
-    private static final String[] INTERNAL_ENDPOINTS = {
-            "/api/v1/internal/product/**",
-            "/api/v1/internal/category/**"
-    };
 
     // Các endpoint public không cần xác thực
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/api/v1/user/product/**",
-            "/api/v1/user/category/**",
+            "/api/v1/product/**",
+            "/api/v1/category/**",
     };
-
-    @Value("${auth.username}")
-    private String authUsername;
-
-    @Value("${auth.password}")
-    private String authPassword;
 
     private final CustomJwtDecoder customJwtDecoder;
 
@@ -49,18 +39,14 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
+        log.info("Security Config");
         httpSecurity
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(INTERNAL_ENDPOINTS).authenticated()
                         .anyRequest().authenticated()
                 )
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .httpBasic(httpBasic -> httpBasic
-                        .authenticationEntryPoint(basicAuthenticationEntryPoint())
-                        .realmName("Product Service Internal API")
-                )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwtConfigurer -> jwtConfigurer
                                 .decoder(customJwtDecoder)
@@ -70,23 +56,6 @@ public class SecurityConfig {
                 );
 
         return httpSecurity.build();
-    }
-
-    @Bean
-    public InMemoryUserDetailsManager internalUserDetailsService(PasswordEncoder passwordEncoder) {
-        UserDetails serviceUser = User.withUsername(authUsername)
-                .password(passwordEncoder.encode(authPassword))
-                .roles("INTERNAL_SERVICE")
-                .build();
-
-        return new InMemoryUserDetailsManager(serviceUser);
-    }
-
-    @Bean
-    public BasicAuthenticationEntryPoint basicAuthenticationEntryPoint() {
-        BasicAuthenticationEntryPoint entryPoint = new BasicAuthenticationEntryPoint();
-        entryPoint.setRealmName("Product Service Internal API");
-        return entryPoint;
     }
 
     @Bean

@@ -47,4 +47,14 @@ public class SecurityUtil {
 
         return jwt.getClaim("needsPassword");
     }
+
+    public static boolean getEnabled() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+            return false;
+        }
+
+        return jwt.getClaim("enabled").toString().equals("true");
+    }
 }

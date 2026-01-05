@@ -4,25 +4,28 @@ import com.example.commonlib.dto.ApiResponse;
 import com.example.apigateway.service.AuthService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jwt.SignedJWT;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -30,8 +33,7 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PACKAGE, makeFinal = true)
-public class AuthenticationFilter implements GlobalFilter, Ordered {
-
+public class AuthenticationFilter implements WebFilter, Ordered {
     AuthService authService;
     ObjectMapper objectMapper;
 
@@ -40,79 +42,76 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             "/auth/login",
             "/auth/logout",
             "/auth/register",
-            "/auth/outbound/authentication",
-            "/auth/refresh-token",
-            "/user/product",
-            "/user/product/price-range",
-            "/user/product/{productId}",
-            "/user/category",
-            "/user/category/{categoryId}",
-            "/search",
-    };
+            "/auth/refresh-token" };
 
     @Value("${app.api-prefix}")
     @NonFinal
     String apiRefix;
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        log.info("Authentication Filter");
-        if (isPublicUrl(exchange.getRequest())) {
+    public int getOrder() {
+        return -1;
+    }
+
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        ServerHttpRequest request = exchange.getRequest();
+        String path = request.getURI().getPath();
+
+        if (HttpMethod.OPTIONS.equals(request.getMethod())) {
+            return chain.filter(exchange);
+        }
+
+        if (isPublicUrl(request)) {
             return chain.filter(exchange);
         }
 
         List<String> authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION);
-        if (CollectionUtils.isEmpty(authHeader) || authHeader.get(0) == null || authHeader.get(0).isBlank()) {
-            return unauthenticated(exchange.getResponse());
+        if (CollectionUtils.isEmpty(authHeader) || !authHeader.get(0).startsWith("Bearer ")) {
+            return unauthenticated(exchange.getResponse(), "Missing token", HttpStatus.UNAUTHORIZED);
         }
 
         String token = authHeader.get(0).replace("Bearer ", "");
 
         return authService.introspect(token)
                 .flatMap(response -> {
-                    log.info("Authentication Success: {}", response.isValid());
                     if (response.isValid()) {
-                        return chain.filter(exchange);
+                        try {
+                            String role = getRoleFromToken(token);
+                            if (path.contains("/users") && !role.contains("ADMIN")) {
+                                return unauthenticated(exchange.getResponse(), "Forbidden: Admin role required", HttpStatus.FORBIDDEN);
+                            }
+                            return chain.filter(exchange);
+
+                        } catch (ParseException e) {
+                            return unauthenticated(exchange.getResponse(), "Invalid token format", HttpStatus.UNAUTHORIZED);
+                        }
                     } else {
-                        return unauthenticated(exchange.getResponse());
+                        return unauthenticated(exchange.getResponse(), "Token invalid", HttpStatus.UNAUTHORIZED);
                     }
-                })
-                .onErrorResume(error -> {
-                    log.error("Token introspect failed", error);
-                    return unauthenticated(exchange.getResponse());
                 });
+    }
+
+    private String getRoleFromToken(String token) throws ParseException {
+        SignedJWT signedJWT = SignedJWT.parse(token);
+        Object role = signedJWT.getJWTClaimsSet().getClaim("role");
+        return role != null ? role.toString() : "";
     }
 
     private boolean isPublicUrl(ServerHttpRequest request) {
         String path = request.getURI().getPath();
-        return Arrays.stream(publicUrls)
-                .map(url -> apiRefix + url)
-                .anyMatch(path::startsWith);
+        return Arrays.stream(publicUrls).map(url -> apiRefix + url).anyMatch(path::startsWith);
     }
 
-    @Override
-    public int getOrder() {
-        return -1;
-    }
-
-    private Mono<Void> unauthenticated(ServerHttpResponse response) {
-        ApiResponse<?> apiResponse = ApiResponse.builder()
-                .code(1401)
-                .message("Unauthenticated")
-                .build();
-
-        String body;
-        try {
-            body = objectMapper.writeValueAsString(apiResponse);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
-        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+    public Mono<Void> unauthenticated(ServerHttpResponse response, String message, HttpStatus status) {
+        ApiResponse<?> apiResponse = ApiResponse.builder().code(status.value()).message(message).build();
+        response.setStatusCode(status);
         response.getHeaders().set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-
-        return response.writeWith(
-                Mono.just(response.bufferFactory().wrap(body.getBytes()))
-        );
+        try {
+            String body = objectMapper.writeValueAsString(apiResponse);
+            return response.writeWith(Mono.just(response.bufferFactory().wrap(body.getBytes())));
+        } catch (JsonProcessingException e) {
+            return response.setComplete();
+        }
     }
 }

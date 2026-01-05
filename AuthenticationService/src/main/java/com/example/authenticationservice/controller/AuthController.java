@@ -3,8 +3,10 @@ package com.example.authenticationservice.controller;
 import com.example.authenticationservice.constant.UrlConstan;
 import com.example.authenticationservice.dto.request.*;
 import com.example.authenticationservice.dto.response.LoginResponse;
+import com.example.authenticationservice.entity.AuthenUser;
 import com.example.authenticationservice.service.AuthService;
 import com.example.commonlib.dto.ApiResponse;
+import com.example.commonlib.dto.PagingResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -141,11 +143,14 @@ public class AuthController {
         return apiResponse;
     }
 
-    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
-    @GetMapping("/block-user/{id}")
-    public ApiResponse<String> blockUser(@PathVariable("id") Integer userId) {
+
+    @PutMapping("/update-auth-user/{id}")
+    public ApiResponse<String> blockUser(
+            @PathVariable("id") Integer userId,
+            @RequestBody UpdateAuthUser updateAuthUser
+    ) {
         ApiResponse<String> apiResponse = new ApiResponse<>();
-        apiResponse.setData(authService.blockUser(userId));
+        apiResponse.setData(authService.updateAuthUser(userId, updateAuthUser));
         return apiResponse;
     }
 

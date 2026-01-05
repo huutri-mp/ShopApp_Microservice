@@ -7,11 +7,10 @@ import com.example.profileservice.dto.request.AddressUpdateRequest;
 import com.example.profileservice.service.AddressesService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
-@RequestMapping(UrlConstant.API_V1_ADDRESS_USER)
+@RequestMapping(UrlConstant.API_V1_ADDRESS)
 public class UserAddressesController {
 
     @Autowired
@@ -26,17 +25,23 @@ public class UserAddressesController {
     }
 
     @PutMapping("/update/{addressId}")
-    public ResponseEntity<String> updateAddress(@PathVariable Integer addressId, @RequestBody AddressUpdateRequest request) {
+    public ApiResponse<String> updateAddress(@PathVariable Integer addressId, @RequestBody AddressUpdateRequest request) {
         log.info("Updating address with ID: {}", addressId);
         String response = addressesService.updateAdderss(addressId, request);
-        return ResponseEntity.ok(response);
+        ApiResponse<String> result = ApiResponse.<String>builder()
+                .data(response)
+                .build();
+        return result;
     }
 
     @DeleteMapping("/delete/{addressId}")
-    public ResponseEntity<String> deleteAddress(@PathVariable Integer addressId) {
+    public ApiResponse<String> deleteAddress(@PathVariable Integer addressId) {
         log.info("Deleting address with ID: {}", addressId);
         String response = addressesService.deleteAddress(addressId);
-        return ResponseEntity.ok(response);
+        ApiResponse<String> result = ApiResponse.<String>builder()
+                .data(response)
+                .build();
+        return result;
     }
 
 }
