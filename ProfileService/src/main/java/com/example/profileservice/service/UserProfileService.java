@@ -1,5 +1,6 @@
 package com.example.profileservice.service;
 
+import com.example.commonlib.dto.PagingResponse;
 import com.example.profileservice.dto.request.ProfileCreationRequest;
 import com.example.profileservice.dto.request.ProfileUpdateRequest;
 import com.example.profileservice.dto.response.UserProfileResponse;
@@ -14,8 +15,8 @@ public interface UserProfileService {
     String createUserProfile(ProfileCreationRequest request);
     boolean checkEmailExists(String email);
     UserProfileResponse getMyInfo();
-    UserProfileResponse updateUserProfile(ProfileUpdateRequest request, MultipartFile avatar);
-    List<UserProfileResponse> getAllUserProfiles();
+    UserProfileResponse updateUserProfile(int userId ,ProfileUpdateRequest request, MultipartFile avatar);
+    List<UserProfileResponse> getUserProfilesInternal(String keyword);
     String deleteUserProfile(Integer userId);
     UserProfileResponseInternal getProfileById(int userId);
     UserProfileResponseInternal getProfileByEmail(String email);

@@ -3,16 +3,18 @@ package com.example.productservice.dto.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDate;
+import java.util.List;
 
-@Getter
-@Setter
+
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CategoryResponse {
-    int id;
+    Long id;
     String name;
-    String description;
+    String slug;
+    Long parentId;
+    List<CategoryResponse> children;
 }

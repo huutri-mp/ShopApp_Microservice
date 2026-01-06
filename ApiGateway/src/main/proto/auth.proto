@@ -1,9 +1,12 @@
 syntax = "proto3";
 
+import "google/protobuf/wrappers.proto";
+
 package auth;
 
 service AuthService {
   rpc Introspect(IntrospectRequest) returns (IntrospectResponse);
+  rpc getUsers(GetUsersRequest) returns (GetUserResponse);
 }
 
 message IntrospectRequest {
@@ -13,3 +16,29 @@ message IntrospectRequest {
 message IntrospectResponse {
   bool valid = 1;
 }
+
+message GetUsersRequest {
+  int32 page = 1;
+  int32 size = 2;
+  string role = 3;
+  google.protobuf.BoolValue enabled = 4;
+  repeated int32 userIds = 5;
+  string sort = 6;
+}
+
+message AuthUserProto {
+  int32 id = 1;
+  string userName = 2;
+  string role = 3;
+  bool enabled = 4;
+}
+
+message GetUserResponse {
+  repeated AuthUserProto items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 size = 4;
+  bool hasNext = 5;
+  bool hasPrev = 6;
+}
+

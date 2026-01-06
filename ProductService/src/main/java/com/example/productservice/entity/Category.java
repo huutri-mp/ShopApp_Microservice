@@ -1,37 +1,40 @@
 package com.example.productservice.entity;
 
+import com.example.productservice.util.BaseEntityWithSlug;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import jakarta.validation.constraints.*;
-import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(name = "categories")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "categories")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Category {
+public class Category extends BaseEntityWithSlug {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    int id;
-    @NotBlank(message = "Tên loại sản phẩm không được để trống")
-    @Size(max = 255, message = "Tên loại sản phẩm không vượt quá 255 ký tự")
+    Long id;
+
+    @Column(nullable = false, unique = true)
     String name;
-    @Size(max = 1000, message = "Mô tả không vượt quá 1000 ký tự")
-    String description;
 
-    @CreationTimestamp
-    @Column(name = "created_at")
-    LocalDate createdAt;
+    @Override
+    protected String getSlugSource() {
+        return name;
+    }
 
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    List<Product> products;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    Category parent;
+
+    @OneToMany(mappedBy = "parent")
+    List<Category> children = new ArrayList<>();
 }
+

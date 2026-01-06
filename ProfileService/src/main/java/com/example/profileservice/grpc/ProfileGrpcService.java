@@ -1,7 +1,9 @@
 package com.example.profileservice.grpc;
 
+import com.example.commonlib.dto.PagingResponse;
 import com.example.commonlib.exception.AppException;
 import com.example.profileservice.dto.request.ProfileCreationRequest;
+import com.example.profileservice.dto.response.UserProfileResponse;
 import com.example.profileservice.dto.response.UserProfileResponseInternal;
 import com.example.profileservice.enums.Gender;
 import com.example.profileservice.service.UserProfileService;
@@ -14,6 +16,7 @@ import profile.*;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 
 import static com.google.common.base.Strings.emptyToNull;
 
@@ -154,6 +157,39 @@ public class ProfileGrpcService extends ProfileServiceGrpc.ProfileServiceImplBas
                 .build();
     }
 
+    @Override
+    public void getUserProfiles(
+            GetUserProfilesRequest request,
+            StreamObserver<GetUserProfilesResponse> responseObserver
+    ) {
+        log.info("gRPC GetUserProfiles - keyword: {}", request.getKeywork());
+
+        try {
+            List<UserProfileResponse> profiles =
+                    userProfileService.getUserProfilesInternal(request.getKeywork());
+
+            GetUserProfilesResponse response = GetUserProfilesResponse.newBuilder()
+                    .addAllItems(
+                            profiles.stream()
+                                    .map(this::mapToGrpc)
+                                    .toList()
+                    )
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+
+        } catch (Exception e) {
+            log.error("gRPC GetUserProfiles - Unexpected error", e);
+            responseObserver.onError(
+                    Status.INTERNAL
+                            .withDescription("Internal server error")
+                            .asRuntimeException()
+            );
+        }
+    }
+
+
     private LocalDate parseLocalDate(String dateStr) {
         if (dateStr == null || dateStr.isEmpty()) {
             return null;
@@ -177,4 +213,20 @@ public class ProfileGrpcService extends ProfileServiceGrpc.ProfileServiceImplBas
             return null;
         }
     }
+
+    private ProfileGrpcResponse mapToGrpc(UserProfileResponse dto) {
+        return ProfileGrpcResponse.newBuilder()
+                .setUserId(dto.getUserId())
+                .setFullName(dto.getFullName() != null ? dto.getFullName() : "")
+                .setEmail(dto.getEmail() != null ? dto.getEmail() : "")
+                .setPhoneNumber(dto.getPhoneNumber() != null ? dto.getPhoneNumber() : "")
+                .setGender(dto.getGender() != null ? dto.getGender().name() : "")
+                .setDateOfBirth(
+                        dto.getDateOfBirth() != null ? dto.getDateOfBirth().toString() : ""
+                )
+                .setAvatar(dto.getAvatar() != null ? dto.getAvatar() : "")
+                .build();
+    }
+
+
 }

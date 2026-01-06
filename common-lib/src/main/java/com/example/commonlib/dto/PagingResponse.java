@@ -1,10 +1,8 @@
 package com.example.commonlib.dto;
 
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
@@ -12,9 +10,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class PagingResponse<T> {
-    private List<T> items;
-    private long total;
-    private int page;
-    private int size;
+    List<T> items;
+    long total;
+    int page;
+    int size;
+    boolean hasNext;
+    boolean hasPrev;
 }

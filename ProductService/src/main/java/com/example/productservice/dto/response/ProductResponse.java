@@ -3,20 +3,22 @@ package com.example.productservice.dto.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDate;
+import java.util.List;
 
-@Getter
-@Setter
+
+@Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ProductResponse {
-    int id;
+    Long id;
     String name;
+    String slug;
     String description;
-    Double price;
-    String brand;
-    String category;
-    String status;
+    Boolean active;
+    CategoryResponse category;
+    BrandResponse brand;
+    List<ProductImageResponse> images;
+    List<ProductVariantResponse> variants;
 }

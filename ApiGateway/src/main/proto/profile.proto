@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package profile;
+
+option java_multiple_files = false;
+option java_package = "profile";
+option java_outer_classname = "Profile";
+
+// Profile Service
+service ProfileService {
+  rpc CreateProfile(CreateProfileRequest) returns (CreateProfileResponse);
+  rpc CheckEmailExists(CheckEmailRequest) returns (CheckEmailResponse);
+  rpc GetProfile(GetProfileRequest) returns (ProfileGrpcResponse);
+  rpc GetProfileByEmail(GetProfileByEmailRequest) returns (ProfileGrpcResponse);
+  rpc GetUserProfiles(GetUserProfilesRequest) returns (GetUserProfilesResponse);
+}
+
+service AddressService {
+  rpc GetAddressById(GetAddressByIdRequest) returns (AddressGrpcResponse);
+  rpc CheckAddress(CheckAddressRequest) returns (CheckAddressResponse);
+}
+
+message CreateProfileRequest {
+  int32 userId = 1;
+  string fullName = 2;
+  string email = 3;
+  string phoneNumber = 4;
+  string dateOfBirth = 5;
+  string gender = 6;
+  string avatarUrl = 7;
+}
+
+message CreateProfileResponse {
+  string message = 1;
+}
+
+message CheckEmailRequest {
+  string email = 1;
+}
+
+message CheckEmailResponse {
+  bool exists = 1;
+}
+
+message GetProfileRequest {
+  int32 userId = 1;
+}
+
+message GetProfileByEmailRequest {
+  string email = 1;
+}
+
+message ProfileGrpcResponse {
+  int32 userId = 1;
+  string fullName = 2;
+  string email = 3;
+  string phoneNumber = 4;
+  string gender = 5;
+  string dateOfBirth = 6;
+  string avatar = 7;
+}
+
+message GetUserProfilesRequest {
+  string keyword = 1;
+}
+
+message GetUserProfilesResponse {
+  repeated ProfileGrpcResponse items = 1;
+}
+
+message GetAddressByIdRequest {
+  int32 addressId = 1;
+}
+
+message CheckAddressRequest {
+  int32 userId = 1;
+  int32 addressId = 2;
+}
+
+message CheckAddressResponse {
+  bool valid = 1;
+}
+
+message AddressGrpcResponse {
+  int32 addressId = 1;
+  string contactName = 2;
+  string contactPhone = 3;
+  string addressLine = 4;
+  string wards = 5;
+  string province = 6;
+  string country = 7;
+  bool isDefault = 8;
+}

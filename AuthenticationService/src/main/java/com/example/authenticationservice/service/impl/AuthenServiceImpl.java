@@ -6,6 +6,7 @@ import com.example.authenticationservice.entity.AuthenUser;
 import com.example.authenticationservice.entity.InvalidatedToken;
 import com.example.authenticationservice.entity.RefreshToken;
 import com.example.authenticationservice.service.*;
+import com.example.commonlib.dto.PagingResponse;
 import com.example.commonlib.exception.AppException;
 import com.example.commonlib.exception.ErrorCode;
 import com.example.commonlib.dto.NotificationEvent;
@@ -19,7 +20,13 @@ import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,9 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.text.ParseException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -87,7 +92,7 @@ public class AuthenServiceImpl implements AuthService {
                 .build();
 
         authRepository.saveAndFlush(authenUser);
-        log.info("User ID: {}", authenUser.getId());
+
         String avtUrl = null;
         if(avt != null) {
             try {
@@ -200,7 +205,6 @@ public class AuthenServiceImpl implements AuthService {
         } catch (JOSEException e) {
             throw new AppException(ErrorCode.AUTH_TOKEN_INVALID);
         }
-        log.info("Introspect token: {}, valid: {}", token, introspectResponse.isValid());
         return introspectResponse;
     }
     public LoginResponse outboundAuthenticate(String code, String provider) {
@@ -209,7 +213,6 @@ public class AuthenServiceImpl implements AuthService {
 
         formData.put("code", code);
         formData.put("grant_type", "authorization_code");
-        log.info("Sending formData: {}", formData);
 
         ExchangeTokenResponse response ;
         OutboundUserResponse userInfo = null;
@@ -273,7 +276,6 @@ public class AuthenServiceImpl implements AuthService {
     }
 
     public String changePassword(ChangePasswordRequest request) {
-        log.info("Change password request: {}", request);
         if (request == null || request.getNewPassword() == null) {
             throw new AppException(ErrorCode.INVALID_REQUEST);
         }
@@ -313,14 +315,22 @@ public class AuthenServiceImpl implements AuthService {
 
         return "Password changed successfully";
     }
-    public String blockUser(Integer userId) {
+
+    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
+    public String updateAuthUser(Integer userId, UpdateAuthUser updateAuthUser) {
         AuthenUser authenUser = authRepository.getUserById(userId);
         if (authenUser == null) {
             throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
-        authenUser.setEnabled(false);
+
+        Optional.ofNullable(updateAuthUser.getRole())
+                .ifPresent(authenUser::setRole);
+
+        Optional.ofNullable(updateAuthUser.getEnabled())
+                .ifPresent(authenUser::setEnabled);
+
         authRepository.save(authenUser);
-        return "User blocked successfully";
+        return "User updated successfully";
     }
     public String createPassword(CreatePasswordRequest request) {
         if (request == null || !StringUtils.hasText(request.getPassword())) {
@@ -357,5 +367,55 @@ public class AuthenServiceImpl implements AuthService {
     public Boolean checkUserNameExists (String userName) {
         return authRepository.existsUserByUserName(userName);
     }
+
+    @Override
+    public PagingResponse<AuthenUser> getUsers(
+            int page,
+            int size,
+            Boolean enabled,
+            List<Integer> userIds,
+            String role,
+            String sort
+    ) {
+
+        Specification<AuthenUser> spec =
+                (root, query, cb) -> cb.conjunction();
+
+        if (enabled != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("enabled"), enabled));
+        }
+
+        if (role != null && !role.isBlank()) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("role"), role));
+        }
+
+        if (userIds != null && !userIds.isEmpty()) {
+            spec = spec.and((root, query, cb) ->
+                    root.get("id").in(userIds));
+
+        }
+
+        Sort sortObj =
+                "asc".equalsIgnoreCase(sort)
+                        ? Sort.by("userName").ascending()
+                        : "desc".equalsIgnoreCase(sort)
+                        ? Sort.by("userName").descending()
+                        : Sort.by("id").descending();
+
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+
+        Page<AuthenUser> users = authRepository.findAll(spec, pageable);
+        return PagingResponse.<AuthenUser>builder()
+                .items(users.getContent())
+                .total(users.getTotalElements())
+                .page(page)
+                .size(size)
+                .hasNext(users.hasNext())
+                .hasPrev(users.hasPrevious())
+                .build();
+    }
+
 }
 
