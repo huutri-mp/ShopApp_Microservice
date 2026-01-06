@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-import javax.management.relation.Role;
 
 @AllArgsConstructor
 @Getter

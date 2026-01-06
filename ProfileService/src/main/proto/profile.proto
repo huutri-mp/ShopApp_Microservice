@@ -61,7 +61,7 @@ message ProfileGrpcResponse {
 }
 
 message GetUserProfilesRequest {
-  string keywork = 1;
+  string keyword = 1;
 }
 
 message GetUserProfilesResponse {

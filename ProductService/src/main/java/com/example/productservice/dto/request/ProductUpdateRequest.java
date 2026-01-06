@@ -1,10 +1,7 @@
 package com.example.productservice.dto.request;
 
-import jakarta.validation.constraints.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
-import java.lang.reflect.Array;
 import java.util.List;
 
 @Data

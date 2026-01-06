@@ -31,9 +31,6 @@ public class SecurityConfig {
         "/api/v1/auth/outbound/authentication",
         "/api/v1/auth/refresh-token",
     };
-    private static final String[] INTERNAL_ENDPOINTS = {
-            "/api/v1/internal/auth/**"
-    };
 
     private final CustomJwtDecoder customJwtDecoder;
 
@@ -54,7 +51,6 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(request -> request
                     .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                    .requestMatchers(INTERNAL_ENDPOINTS).authenticated()
                     .anyRequest().authenticated()
                 )
 

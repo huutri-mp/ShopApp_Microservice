@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class AuthGrpcClient {
     @GrpcClient("auth-service")
-    private AuthServiceGrpc.AuthServiceBlockingStub authServiceStub;;
+    private AuthServiceGrpc.AuthServiceBlockingStub authServiceStub;
 
     public String deleteUser (int userId) {
         log.debug("gRPC DeleteUser - Request for userId: {}", userId);

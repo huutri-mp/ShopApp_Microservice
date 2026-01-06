@@ -42,7 +42,17 @@ public class AuthenticationFilter implements WebFilter, Ordered {
             "/auth/login",
             "/auth/logout",
             "/auth/register",
-            "/auth/refresh-token" };
+            "/auth/refresh-token",
+            "/auth/outbound/authentication",
+
+    };
+
+    @NonFinal
+    String[] publicGetOnlyUrls = {
+            "/products/**",
+            "/categories/**",
+            "/brands/**",
+    };
 
     @Value("${app.api-prefix}")
     @NonFinal
@@ -65,6 +75,8 @@ public class AuthenticationFilter implements WebFilter, Ordered {
         if (isPublicUrl(request)) {
             return chain.filter(exchange);
         }
+
+
 
         List<String> authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION);
         if (CollectionUtils.isEmpty(authHeader) || !authHeader.get(0).startsWith("Bearer ")) {
@@ -100,8 +112,26 @@ public class AuthenticationFilter implements WebFilter, Ordered {
 
     private boolean isPublicUrl(ServerHttpRequest request) {
         String path = request.getURI().getPath();
-        return Arrays.stream(publicUrls).map(url -> apiRefix + url).anyMatch(path::startsWith);
+        HttpMethod method = request.getMethod();
+
+        // Public cho mọi method
+        boolean isPublic =
+                Arrays.stream(publicUrls)
+                        .map(url -> apiRefix + url)
+                        .anyMatch(path::startsWith);
+
+        if (isPublic) return true;
+
+        // Chỉ public khi GET
+        if (HttpMethod.GET.equals(method)) {
+            return Arrays.stream(publicGetOnlyUrls)
+                    .map(url -> apiRefix + url)
+                    .anyMatch(path::startsWith);
+        }
+
+        return false;
     }
+
 
     public Mono<Void> unauthenticated(ServerHttpResponse response, String message, HttpStatus status) {
         ApiResponse<?> apiResponse = ApiResponse.builder().code(status.value()).message(message).build();

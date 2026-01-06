@@ -8,15 +8,13 @@ import com.example.productservice.dto.request.CategoryRequest;
 import com.example.productservice.dto.response.CategoryResponse;
 import com.example.productservice.service.CategoryService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(UrlConstant.API_V1_CATEGORY)
 @RequiredArgsConstructor
 public class CategoryController {
-    @Autowired
+
     private final CategoryService categoryService;
 
     @PostMapping

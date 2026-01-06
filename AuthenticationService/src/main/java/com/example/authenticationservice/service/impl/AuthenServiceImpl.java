@@ -92,7 +92,7 @@ public class AuthenServiceImpl implements AuthService {
                 .build();
 
         authRepository.saveAndFlush(authenUser);
-        log.info("User ID: {}", authenUser.getId());
+
         String avtUrl = null;
         if(avt != null) {
             try {
@@ -205,7 +205,6 @@ public class AuthenServiceImpl implements AuthService {
         } catch (JOSEException e) {
             throw new AppException(ErrorCode.AUTH_TOKEN_INVALID);
         }
-        log.info("Introspect token: {}, valid: {}", token, introspectResponse.isValid());
         return introspectResponse;
     }
     public LoginResponse outboundAuthenticate(String code, String provider) {
@@ -214,7 +213,6 @@ public class AuthenServiceImpl implements AuthService {
 
         formData.put("code", code);
         formData.put("grant_type", "authorization_code");
-        log.info("Sending formData: {}", formData);
 
         ExchangeTokenResponse response ;
         OutboundUserResponse userInfo = null;
@@ -278,7 +276,6 @@ public class AuthenServiceImpl implements AuthService {
     }
 
     public String changePassword(ChangePasswordRequest request) {
-        log.info("Change password request: {}", request);
         if (request == null || request.getNewPassword() == null) {
             throw new AppException(ErrorCode.INVALID_REQUEST);
         }
@@ -326,8 +323,6 @@ public class AuthenServiceImpl implements AuthService {
             throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
 
-        log.info("Update user request: {}", updateAuthUser);
-
         Optional.ofNullable(updateAuthUser.getRole())
                 .ifPresent(authenUser::setRole);
 
@@ -373,6 +368,7 @@ public class AuthenServiceImpl implements AuthService {
         return authRepository.existsUserByUserName(userName);
     }
 
+    @Override
     public PagingResponse<AuthenUser> getUsers(
             int page,
             int size,
