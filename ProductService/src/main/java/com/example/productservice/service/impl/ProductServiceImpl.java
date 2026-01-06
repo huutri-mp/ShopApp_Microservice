@@ -271,7 +271,7 @@ public class ProductServiceImpl implements ProductService {
             log.info("Published product event: {} for {}", type, p.getId());
 
         } catch (Exception ex) {
-            log.error("Failed publish event {}", ex.getMessage(), ex);
+            log.error("Failed to publish event {} for product {}", type, p.getId(), ex);
         }
     }
 }

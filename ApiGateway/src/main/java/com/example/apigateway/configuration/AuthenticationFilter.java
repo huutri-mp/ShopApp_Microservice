@@ -145,7 +145,8 @@ public class AuthenticationFilter implements WebFilter, Ordered {
 
     private boolean isForbidden(ServerHttpRequest request, String role) {
         String path = request.getURI().getPath();
-        return path.contains("/users") && !role.contains("ADMIN");
+        String usersPattern = apiPrefix + "/users/**";
+        return pathMatcher.match(usersPattern, path) && !"ADMIN".equals(role);
     }
 
     private Mono<Void> unauthenticated(ServerHttpResponse response,

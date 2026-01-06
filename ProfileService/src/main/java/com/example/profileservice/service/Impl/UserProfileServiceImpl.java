@@ -238,7 +238,6 @@ public class UserProfileServiceImpl implements UserProfileService {
                 .toList();
     }
 
-    @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public String deleteUserProfile(Integer userId) {
         UserProfile userProfile = userProfileRepository.findById(userId)
