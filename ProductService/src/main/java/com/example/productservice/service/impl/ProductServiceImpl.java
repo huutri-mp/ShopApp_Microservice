@@ -50,15 +50,14 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
     private final ProductEventMapper productEventMapper;
     private final UploadGrpcClient uploadGrpcClient;
-    private final ProductImageRepository productImageRepository;
-    private final ProductVariantRepository productVariantRepository;
+
     private final ProductVariantMapper productVariantMapper;
 
     private final String TOPIC = "product-events";
 
     @Override
     @Transactional
-    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
+    @PreAuthorize("hasRole('ADMIN')")
     public ProductResponse create(ProductCreationRequest req, List<MultipartFile> files) {
 
         Category cat = categoryRepository.findById(req.getCategoryId())
@@ -105,7 +104,7 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toResponse(saved);
     }
 
-    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     @Transactional
     public ProductResponse update(Long id, ProductUpdateRequest req, List<MultipartFile> files) {
@@ -170,7 +169,7 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toResponse(saved);
     }
 
-    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     @Transactional
     public void delete(Long id) {
@@ -200,6 +199,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ADMIN')")
     public PagingResponse<ProductResponse> getProducts(
             Integer page,
             Integer size,

@@ -9,6 +9,7 @@ import com.example.commonlib.exception.AppException;
 import com.example.commonlib.exception.ErrorCode;
 import com.example.productservice.repository.CategoryRepository;
 import com.example.productservice.service.CategoryService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
@@ -26,15 +27,14 @@ import java.util.List;
 @Service
 @Primary
 @Slf4j
-
+@RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
-    @Autowired
-    private CategoryRepository categoryRepository;
 
-    @Autowired
-    private CategoryMapper categoryMapper;
+    private final CategoryRepository categoryRepository;
 
-    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
+    private final CategoryMapper categoryMapper;
+
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public CategoryResponse createCategory(CategoryRequest request) {
 
@@ -62,7 +62,7 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryMapper.toCategoryResponse(category);
     }
 
-    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public CategoryResponse updateCategory(Long id, CategoryRequest request) {
         Category category = categoryRepository.findById(id)
@@ -90,7 +90,7 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryMapper.toCategoryResponse(category);
     }
 
-    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public void deleteCategory(Long id) {
         Category category = categoryRepository.findById(id)

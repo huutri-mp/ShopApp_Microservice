@@ -27,7 +27,7 @@ public class BrandServiceImpl implements BrandService {
     private final BrandRepository brandRepository;
     private final BrandMapper brandMapper;
 
-    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public BrandResponse create(BrandRequest request) {
         Brand brand = Brand.builder()
@@ -94,7 +94,7 @@ public class BrandServiceImpl implements BrandService {
                 .build();
     }
 
-    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public BrandResponse update(Long id, BrandRequest request) {
         Brand brand = brandRepository.findById(id)
@@ -104,7 +104,7 @@ public class BrandServiceImpl implements BrandService {
         return brandMapper.toResponse(brand);
     }
 
-    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public void delete(Long id) {
         if (!brandRepository.existsById(id)) {

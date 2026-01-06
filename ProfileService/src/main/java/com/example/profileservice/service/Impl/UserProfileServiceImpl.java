@@ -145,7 +145,7 @@ public class UserProfileServiceImpl implements UserProfileService {
                .build();
     }
 
-    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN' or #userId == authentication.principal.claims['userId']")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.claims['userId']")
     public UserProfileResponse updateUserProfile(int userId,ProfileUpdateRequest request, MultipartFile avt) {
 
         UserProfile userProfile = userProfileRepository.findById(userId)
@@ -239,7 +239,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     @Transactional
-    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
+    @PreAuthorize("hasRole('ADMIN')")
     public String deleteUserProfile(Integer userId) {
         UserProfile userProfile = userProfileRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_FOUND));
