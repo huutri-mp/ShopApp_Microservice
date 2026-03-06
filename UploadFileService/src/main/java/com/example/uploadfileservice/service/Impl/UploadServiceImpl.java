@@ -3,6 +3,7 @@ package com.example.uploadfileservice.service.Impl;
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
+import com.example.uploadfileservice.dto.UploadFileCommand;
 import com.example.uploadfileservice.service.UploadService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,16 +18,23 @@ public class UploadServiceImpl implements UploadService {
    @Autowired
    private BlobServiceClient blobServiceClient;
 
-    public String uploadFile(MultipartFile file, String containerName) throws IOException {
+    @Override
+    public String uploadFile(UploadFileCommand command) {
 
-        String fileName = UUID.randomUUID() + "-" + file.getOriginalFilename();
+        String fileName =
+                UUID.randomUUID() + "-" + command.originalFileName();
 
         BlobContainerClient containerClient =
-                blobServiceClient.getBlobContainerClient(containerName);
+                blobServiceClient.getBlobContainerClient(command.containerName());
 
-        BlobClient blobClient = containerClient.getBlobClient(fileName);
+        BlobClient blobClient =
+                containerClient.getBlobClient(fileName);
 
-        blobClient.upload(file.getInputStream(), file.getSize(), true);
+        blobClient.upload(
+                command.inputStream(),
+                command.size(),
+                true
+        );
 
         return blobClient.getBlobUrl();
     }

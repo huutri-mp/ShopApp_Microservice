@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option java_package = "order";
+
+import "google/protobuf/empty.proto";
+
+service OrderService {
+  rpc UpdateStatus (UpdateStatusRequest) returns (google.protobuf.Empty);
+}
+
+message UpdateStatusRequest {
+  int64 orderId = 1;
+  string status = 2;
+}

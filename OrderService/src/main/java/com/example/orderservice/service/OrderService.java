@@ -1,19 +1,17 @@
 package com.example.orderservice.service;
 
+import com.example.commonlib.dto.PagingResponse;
 import com.example.orderservice.dto.request.OrderRequest;
-import com.example.orderservice.dto.response.InternalOrderResponse;
 import com.example.orderservice.dto.response.OrderResponse;
 import com.example.orderservice.enums.OrderStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
-
 import java.util.List;
 
 @Service
 public interface OrderService {
-    String createOrder(OrderRequest request);
-    List<OrderResponse> getOrdersByUserId();
-    String cancleOrder(int orderId);
-    InternalOrderResponse getOrderById(int orderId);
-    String updateOrderStatus(int orderId, OrderStatus status);
+    PagingResponse<OrderResponse> queryOrders(Integer page, Integer pageSize, String createdAtTo, String createdAtFrom, String orderStatus, String paymentMethod);
+    OrderResponse createOrder(OrderRequest request);
+    List<OrderResponse> getOrders();
+    String cancleOrder(long orderId);
+    String updateStatus(long orderId, OrderStatus status);
 }

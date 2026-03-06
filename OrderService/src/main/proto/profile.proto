@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package profile;
+
+option java_multiple_files = true;
+option java_package = "profile";
+option java_outer_classname = "ProfileProto";
+
+service ProfileService {
+  rpc GetProfile(GetProfileRequest) returns (ProfileGrpcResponse);
+}
+
+service AddressService {
+  rpc GetAddressById(GetAddressByIdRequest) returns (AddressGrpcResponse);
+}
+
+message GetProfileRequest {
+  int32 userId = 1;
+}
+
+message ProfileGrpcResponse {
+  int32 userId = 1;
+  string fullName = 2;
+  string email = 3;
+  string phoneNumber = 4;
+  string gender = 5;
+  string dateOfBirth = 6;
+  string avatar = 7;
+}
+
+message GetAddressByIdRequest {
+  int32 addressId = 1;
+}
+
+message AddressGrpcResponse {
+  int32 addressId = 1;
+  string contactName = 2;
+  string contactPhone = 3;
+  string addressLine = 4;
+  string wards = 5;
+  string province = 6;
+  string country = 7;
+}
+

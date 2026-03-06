@@ -3,10 +3,7 @@ package com.example.productservice.mapper;
 import com.example.productservice.dto.request.ProductUpdateRequest;
 import com.example.productservice.dto.response.ProductResponse;
 import com.example.productservice.entity.Product;
-import org.mapstruct.BeanMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.*;
 
 @Mapper(
         componentModel = "spring",
@@ -15,7 +12,6 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
                 BrandMapper.class,
                 ProductImageMapper.class,
                 ProductVariantMapper.class
-
         }
 )
 public interface ProductMapper {
@@ -23,8 +19,11 @@ public interface ProductMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     ProductResponse toResponse(Product product);
 
-    @BeanMapping(nullValuePropertyMappingStrategy =
-            NullValuePropertyMappingStrategy.IGNORE)
-    void updateProduct(@MappingTarget Product product,
-                       ProductUpdateRequest request);
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "variants", ignore = true)
+    @Mapping(target = "images", ignore = true)
+    void updateProduct(
+            @MappingTarget Product entity,
+            ProductUpdateRequest request
+    );
 }

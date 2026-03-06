@@ -1,4 +1,4 @@
-package com.example.paymentservce.constan;
+package com.example.paymentservce.constant;
 
 public enum Currency {
     VND("VND");

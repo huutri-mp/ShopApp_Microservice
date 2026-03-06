@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+option java_package = "payment";
+
+service PaymentService {
+  rpc initPayment (InitPaymentReqest) returns (InitPaymentResponse);
+  rpc refundPayment (RefundPaymentRequest) returns (RefundPaymentResponse);
+}
+
+message InitPaymentReqest {
+  int64 orderId = 1;
+  string ipAdress = 2;
+  int64 amount = 3;
+  int32 userId =4;
+}
+
+message InitPaymentResponse {
+  string url = 1;
+}
+
+message RefundPaymentRequest {
+  int64 orderId = 1;
+}
+
+message RefundPaymentResponse {
+  bool success = 1;
+  string code = 2;
+  string message = 3;
+}

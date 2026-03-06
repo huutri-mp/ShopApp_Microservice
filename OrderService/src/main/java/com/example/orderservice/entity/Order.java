@@ -2,11 +2,19 @@ package com.example.orderservice.entity;
 
 import com.example.orderservice.enums.OrderStatus;
 import com.example.orderservice.enums.PaymentMethod;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Type;
+import com.vladmihalcea.hibernate.type.json.JsonType;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 
 @Entity
@@ -20,25 +28,38 @@ import java.util.List;
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    int id;
+    @Column(name = "id")
+    private Long id;
 
     @Column(name = "user_id", nullable = false)
-    int userId;
+    Integer userId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     OrderStatus status;
 
     @Column(name = "total_amount", nullable = false)
-    double totalAmount;
+    BigDecimal totalAmount;
 
-    @Column(name = "shipping_address", nullable = false)
-    int shippingAddress;
+    @Type(JsonType.class)
+    @Column(name = "shipping_address", columnDefinition = "json", nullable = false)
+    Map<String, String> address;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = false)
     PaymentMethod paymentMethod;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<OrderItem> orderItem;
+    @Builder.Default
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonManagedReference
+    List<OrderItem> items = new ArrayList<>();
+
+    @CreationTimestamp
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    public void addItem(OrderItem item) {
+        items.add(item);
+        item.setOrder(this);
+    }
 }

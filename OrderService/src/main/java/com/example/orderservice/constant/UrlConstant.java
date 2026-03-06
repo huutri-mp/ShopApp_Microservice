@@ -1,6 +1,5 @@
-package com.example.orderservice.constan;
+package com.example.orderservice.constant;
 
 public class UrlConstant {
-    public static final String API_V1_ORDER_INTERNAL = "/api/v1/internal/order";
-    public static final String API_V1_ORDER_USER = "/api/v1/user/order";
+    public static final String API_V1_ORDER = "/api/v1/order";
 }

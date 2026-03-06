@@ -6,7 +6,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @NoArgsConstructor
@@ -14,11 +17,14 @@ import java.util.List;
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder
 public class OrderResponse {
-    int id;
+    long id;
     List<OrderItemResponse> orderItems;
-    double totalAmount;
-    AddressResponse shippingAddress;
+    BigDecimal totalAmount;
+    Map<String, String> address;
     OrderStatus status;
     PaymentMethod paymentMethod;
+    String paymentUrl;
+    LocalDateTime createdAt;
 }

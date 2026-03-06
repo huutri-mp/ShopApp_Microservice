@@ -89,5 +89,4 @@ message AddressGrpcResponse {
   string wards = 5;
   string province = 6;
   string country = 7;
-  bool isDefault = 8;
 }

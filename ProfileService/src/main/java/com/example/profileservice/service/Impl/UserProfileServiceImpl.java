@@ -1,5 +1,6 @@
 package com.example.profileservice.service.Impl;
 
+import com.example.commonlib.Enum.MailTemplate;
 import com.example.commonlib.dto.NotificationEvent;
 import com.example.commonlib.dto.PagingResponse;
 import com.example.profileservice.dto.request.ProfileCreationRequest;
@@ -19,10 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,10 +31,8 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import com.example.commonlib.exception.AppException;
 import com.example.commonlib.exception.ErrorCode;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 
@@ -108,7 +105,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         NotificationEvent notificationEvent = NotificationEvent.builder()
                 .channel("email")
                 .recipient(request.getEmail())
-                .template("user_created")
+                .template(MailTemplate.USER_CREATED)
                 .data(data)
                 .build();
         try {
@@ -188,7 +185,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         NotificationEvent notificationEvent = NotificationEvent.builder()
                 .channel("email")
                 .recipient(userProfile.getEmail())
-                .template("user_updated")
+                .template(MailTemplate.USER_UPDATED)
                 .data(data)
                 .build();
         try {
@@ -202,6 +199,7 @@ public class UserProfileServiceImpl implements UserProfileService {
                 .fullName(userProfile.getFullName())
                 .avatar(userProfile.getAvatarUrl())
                 .email(userProfile.getEmail())
+                .role(SecurityUtil.getCurrentUserRole())
                 .phoneNumber(userProfile.getPhoneNumber())
                 .dateOfBirth(userProfile.getDateOfBirth())
                 .gender(userProfile.getGender())

@@ -34,6 +34,13 @@ public class Category extends BaseEntityWithSlug {
     @JoinColumn(name = "parent_id")
     Category parent;
 
+    @OneToMany(
+            mappedBy = "category",
+            cascade = CascadeType.REMOVE,
+            orphanRemoval = true
+    )
+    List<Product> products = new ArrayList<>();
+
     @OneToMany(mappedBy = "parent")
     List<Category> children = new ArrayList<>();
 }

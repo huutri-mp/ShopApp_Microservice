@@ -21,6 +21,6 @@ public class InitPaymentRequest {
 
     private String txnRef;
 
-    private int amount;
+    private Long amount;
 
 }

@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "brands")
 @Getter
@@ -20,6 +23,15 @@ public class Brand extends BaseEntityWithSlug {
     Long id;
 
     String name;
+
+    @OneToMany(
+            mappedBy = "brand",
+            cascade = CascadeType.REMOVE,
+            orphanRemoval = true
+    )
+    List<Product> products = new ArrayList<>();
+
+    String paymentMethhod;
 
     @Override
     protected String getSlugSource() {

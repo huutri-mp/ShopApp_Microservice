@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
@@ -23,9 +22,17 @@ public class Payment {
     int orderId;
 
     @Column(name = "amount", nullable = false)
-    double amount;
+    Long amount;
 
     @Column(name = "payment_method", nullable = false, length = 50)
     PaymentMethod paymentMethod;
 
+    @Column(name = "transaction_date", nullable = false)
+    String transactionDate;
+
+    @Column(name = "transaction_no", nullable = false, length = 50)
+    String transactionNo;
+
+    @Column(nullable = false)
+    private Boolean refund = false;
 }

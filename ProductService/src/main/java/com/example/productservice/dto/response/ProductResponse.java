@@ -19,6 +19,7 @@ public class ProductResponse {
     Boolean active;
     CategoryResponse category;
     BrandResponse brand;
+    Boolean isFeatured;
     List<ProductImageResponse> images;
     List<ProductVariantResponse> variants;
 }

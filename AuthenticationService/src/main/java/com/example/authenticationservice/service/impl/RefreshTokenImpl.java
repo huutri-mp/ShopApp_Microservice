@@ -4,6 +4,7 @@ import com.example.authenticationservice.entity.AuthenUser;
 import com.example.authenticationservice.entity.RefreshToken;
 import com.example.authenticationservice.repository.RefreshTokenRepository;
 import com.example.authenticationservice.service.RefreshTokenService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,9 +17,10 @@ import java.util.UUID;
 @Slf4j
 @Service
 @Primary
+@RequiredArgsConstructor
 public class RefreshTokenImpl implements RefreshTokenService {
-    @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
+
+    private final RefreshTokenRepository refreshTokenRepository;
     @Value("${jwt.refresh-valid-duration}")
     private long REFRESH_VALID_DURATION;
 

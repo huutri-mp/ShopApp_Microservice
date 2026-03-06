@@ -3,6 +3,9 @@ package com.example.productservice.dto.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
+import java.util.Map;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -12,31 +15,13 @@ public class ProductVariantResponse {
 
     Long id;
 
-    String sku;
+    String skuCode;
 
-    String color;
+    BigDecimal price;
 
-    String size;
-
-    Double price;
-
-    Double salePrice;
+    BigDecimal salePrice;
 
     Integer stock;
 
-    // Tech retail attributes
-    String storage;
-    String ram;
-    String cpu;
-    String gpu;
-    String screenSize;
-    String screenResolution;
-    String batteryCapacity;
-    String connectivity;
-    Integer warrantyMonths;
-    String weight;
-    String dimensions;
-    String material;
-    String itemCondition;
-    Integer releaseYear;
+    Map<String, String> attributes;
 }

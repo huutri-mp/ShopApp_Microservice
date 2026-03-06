@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option java_package = "product";
+
+service ProductService {
+  rpc GetProducts (GetProductsRequest) returns (GetProductsResponse);
+}
+
+message GetProductsRequest {
+  repeated string skuCodes = 1;
+}
+
+message ProductInfo {
+  int64 productId = 1;
+  string skuCode = 2;
+  string name = 3;
+  int64 price = 4;
+  string image = 5;
+}
+
+message GetProductsResponse {
+  repeated ProductInfo products = 1;
+}

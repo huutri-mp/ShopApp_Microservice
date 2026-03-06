@@ -1,10 +1,11 @@
 package com.example.productservice.service.impl;
 
+import com.example.commonlib.dto.OrderEvent;
 import com.example.commonlib.dto.PagingResponse;
 import com.example.commonlib.exception.AppException;
 import com.example.commonlib.exception.ErrorCode;
-import com.example.event.dto.EventType;
-import com.example.event.dto.ProductEvent;
+import com.example.commonlib.dto.ProductEvent;
+import com.example.commonlib.dto.EventType;
 import com.example.productservice.mapper.ProductEventMapper;
 import com.example.productservice.mapper.ProductMapper;
 import com.example.productservice.dto.request.*;
@@ -12,12 +13,11 @@ import com.example.productservice.dto.response.*;
 import com.example.productservice.entity.*;
 import com.example.productservice.mapper.ProductVariantMapper;
 import com.example.productservice.repository.*;
-import com.example.productservice.repository.gRPC.UploadGrpcClient;
+import com.example.productservice.repository.gRPCClient.UploadGrpcClient;
 import com.example.productservice.service.ProductService;
-
+import com.example.productservice.util.SkuUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -44,14 +44,15 @@ public class ProductServiceImpl implements ProductService {
     private String containerName;
 
     private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final KafkaTemplate<String, ProductEvent> kafkaTemplate;
     private final ProductMapper productMapper;
     private final ProductEventMapper productEventMapper;
     private final UploadGrpcClient uploadGrpcClient;
-
     private final ProductVariantMapper productVariantMapper;
+    private final SkuUtil skuUtil;
 
     private final String TOPIC = "product-events";
 
@@ -69,7 +70,6 @@ public class ProductServiceImpl implements ProductService {
         Product p = Product.builder()
                 .name(req.getName())
                 .description(req.getDescription())
-                .active(req.getActive() == null ? Boolean.TRUE : req.getActive())
                 .category(cat)
                 .brand(brand)
                 .build();
@@ -83,18 +83,15 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // Variants
-        if (req.getVariants() != null) {
-            p.setVariants(req.getVariants().stream()
-                    .map(v -> ProductVariant.builder()
-                            .sku(v.getSku())
-                            .color(v.getColor())
-                            .size(v.getSize())
-                            .price(v.getPrice())
-                            .salePrice(v.getSalePrice())
-                            .stock(v.getStock())
-                            .product(p)
-                            .build()
-                    ).toList());
+        if (req.getVariants() != null && !req.getVariants().isEmpty()) {
+            req.getVariants().forEach(v -> {
+                ProductVariant pv = productVariantMapper.toEntity(v);
+
+                pv.setSkuCode(skuUtil.generateSku(p));
+                pv.setProduct(p);
+
+                p.getVariants().add(pv);
+            });
         }
 
         Product saved = productRepository.save(p);
@@ -108,7 +105,6 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductResponse update(Long id, ProductUpdateRequest req, List<MultipartFile> files) {
-
         Product p = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
@@ -130,17 +126,15 @@ public class ProductServiceImpl implements ProductService {
             );
         }
 
-        Map<Long, ProductVariant> current = p.getVariants().stream()
-                .collect(Collectors.toMap(ProductVariant::getId, v -> v));
+         Map<Long, ProductVariant> current = p.getVariants().stream()
+                 .collect(Collectors.toMap(ProductVariant::getId, v -> v));
 
         List<ProductVariant> updated = new ArrayList<>();
 
         for (ProductVariantRequest v : req.getVariants()) {
             if (v.getId() != null && current.containsKey(v.getId())) {
                 ProductVariant pv = current.get(v.getId());
-
                 productVariantMapper.updateEntity(v, pv);
-
                 updated.add(pv);
             } else {
                 ProductVariant pv = productVariantMapper.toEntity(v);
@@ -148,14 +142,11 @@ public class ProductServiceImpl implements ProductService {
                 updated.add(pv);
             }
         }
-
-        productMapper.updateProduct(p, req);
         p.getVariants().clear();
         p.getVariants().addAll(updated);
-
+        productMapper.updateProduct(p, req);
 
         if (files != null) {
-            log.info("Uploading {} files", files.size());
             for (MultipartFile file : files) {
                 String url = uploadGrpcClient.uploadFile(file, containerName);
                 p.getImages().add(ProductImage.builder().url(url).product(p).build());
@@ -183,22 +174,6 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public ProductResponse getById(Long id) {
-        Product p = productRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-        return productMapper.toResponse(p);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ProductResponse getBySlug(String slug) {
-        Product p = productRepository.findBySlug(slug);
-        if (p == null) throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
-        return productMapper.toResponse(p);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN')")
     public PagingResponse<ProductResponse> getProducts(
             Integer page,
@@ -208,15 +183,6 @@ public class ProductServiceImpl implements ProductService {
             Long categoryId,
             Long brandId
     ) {
-        log.info(
-                "getProducts size={}, page={}, keyword={}, isDesc={}, categoryId={}, brandId={}",
-                size,
-                page,
-                keyword,
-                isDesc,
-                categoryId,
-                brandId
-        );
 
         Sort sort = Boolean.TRUE.equals(isDesc)
                 ? Sort.by("slug").descending()
@@ -262,6 +228,68 @@ public class ProductServiceImpl implements ProductService {
                 .hasPrev(products.hasPrevious())
                 .build();
 
+    }
+    @Transactional(readOnly = true)
+    public ProductResponse getProductById(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        return productMapper.toResponse(product);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductVariant> getProductsForOrder(List<String> skuCodes){
+
+        List<ProductVariant> products = new ArrayList<>();
+        for (String skuCode : skuCodes) {
+
+            ProductVariant p = productVariantRepository.findBySkuCode(skuCode);
+            if (p != null) {
+                products.add(p);
+            }
+        }
+        return products;
+    };
+
+    @Transactional
+    public void updateStockProduct(OrderEvent event) {
+
+        Map<String, Object> data = event.getData();
+        List<Map<String, Object>> products =
+                (List<Map<String, Object>>) data.get("products");
+
+        List<String> skuCodes = products.stream()
+                .map(p -> (String) p.get("skuCode"))
+                .toList();
+
+        List<ProductVariant> variants =
+                productVariantRepository.findBySkuCodeIn(skuCodes);
+
+        Map<String, ProductVariant> variantMap =
+                variants.stream()
+                        .collect(Collectors.toMap(
+                                ProductVariant::getSkuCode,
+                                v -> v
+                        ));
+
+        for (Map<String, Object> product : products) {
+
+            String skuCode = (String) product.get("skuCode");
+            Integer quantity = (Integer) product.get("quantity");
+
+            ProductVariant pv = variantMap.get(skuCode);
+
+            if (pv == null) {
+                throw new RuntimeException("Product not found: " + skuCode);
+            }
+
+            if (pv.getStock() < quantity) {
+                throw new RuntimeException("Not enough stock");
+            }
+
+            pv.setStock(pv.getStock() - quantity);
+        }
+
+        productVariantRepository.saveAll(variants);
     }
 
     private void publishProductEvent(EventType type, Product p) {

@@ -1,4 +1,4 @@
-package com.example.paymentservce.constan;
+package com.example.paymentservce.constant;
 
 import com.example.paymentservce.dto.response.IpnResponse;
 

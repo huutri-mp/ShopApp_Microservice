@@ -36,7 +36,8 @@ public class Product extends BaseEntityWithSlug {
     @Column(columnDefinition = "TEXT")
     String description;
 
-    Boolean active;
+    @Column
+    Boolean isFeatured;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")

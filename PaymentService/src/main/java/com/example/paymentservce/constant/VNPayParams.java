@@ -1,4 +1,4 @@
-package com.example.paymentservce.constan;
+package com.example.paymentservce.constant;
 
 public class VNPayParams {
     public static final String SECURE_HASH = "vnp_SecureHash";
@@ -16,4 +16,10 @@ public class VNPayParams {
     public static final String EXPIRE_DATE = "vnp_ExpireDate";
     public static final String IP_ADDRESS = "vnp_IpAddr";
     public static final String LOCALE = "vnp_Locale";
+    public static final String REQUESTID = "vnp_RequestId";
+    public static final String TRANSACTION_TYPE = "vnp_TransactionType";
+    public static final String TRANSACTION_DATE = "vnp_TransactionDate";
+    public static final String CREATED_BY = "vnp_CreateBy";
+    public static final String TRANSACTION_NO = "vnp_TransactionNo";
+
 }

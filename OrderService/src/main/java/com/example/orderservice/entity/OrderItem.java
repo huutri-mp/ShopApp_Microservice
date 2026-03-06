@@ -1,7 +1,10 @@
 package com.example.orderservice.entity;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.math.BigDecimal;
 
 @Entity
 @NoArgsConstructor
@@ -14,17 +17,29 @@ import lombok.experimental.FieldDefaults;
 public class OrderItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    int id;
+    Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "order_id")
-    private Order order;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonBackReference
+    @JoinColumn(
+            name = "order_id",
+            nullable = false
+    )
+    Order order;
 
-    @Column(name = "product_id")
-    int productId;
-    int quantity;
+    @Column(name = "product_id", nullable = false)
+    Long productId;
+
+    @Column(name = "sku_code", nullable = false)
+    String skuCode;
+
+    String productName;
+
+    String imageUrl;
+
+    Integer quantity;
+
     @Column(name = "price_at_added")
-    double priceAtAdded;
-
+    BigDecimal priceAtAdded;
 
 }

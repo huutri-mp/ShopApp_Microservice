@@ -23,23 +23,9 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationEn
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    // Các endpoint internal dùng Basic Auth
-    private static final String[] INTERNAL_ENDPOINTS = {
-
-    };
-
-    // Các endpoint public không cần xác thực
     private static final String[] PUBLIC_ENDPOINTS = {
-        "/api/v1/payments/**",
-            "/api/v1/user/payment"
-
+            "/api/v1/payment/**"
     };
-
-    @Value("${auth.username}")
-    private String authUsername;
-
-        @Value("${auth.password}")
-    private String authPassword;
 
     private final CustomJwtDecoder customJwtDecoder;
 
@@ -52,15 +38,11 @@ public class SecurityConfig {
         httpSecurity
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(INTERNAL_ENDPOINTS).authenticated()
                         .anyRequest().authenticated()
                 )
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .httpBasic(httpBasic -> httpBasic
-                        .authenticationEntryPoint(basicAuthenticationEntryPoint())
-                        .realmName("Payment Service Internal API")
-                )
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwtConfigurer -> jwtConfigurer
                                 .decoder(customJwtDecoder)
@@ -73,41 +55,17 @@ public class SecurityConfig {
     }
 
     @Bean
-    public InMemoryUserDetailsManager internalUserDetailsService(PasswordEncoder passwordEncoder) {
-        UserDetails serviceUser = User.withUsername(authUsername)
-                .password(passwordEncoder.encode(authPassword))
-                .roles("INTERNAL_SERVICE")
-                .build();
-
-        return new InMemoryUserDetailsManager(serviceUser);
-    }
-
-    @Bean
-    public BasicAuthenticationEntryPoint basicAuthenticationEntryPoint() {
-        BasicAuthenticationEntryPoint entryPoint = new BasicAuthenticationEntryPoint();
-        entryPoint.setRealmName("Payment Service Internal API");
-        return entryPoint;
-    }
-
-    @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        authoritiesConverter.setAuthorityPrefix("");
-        authoritiesConverter.setAuthoritiesClaimName("authorities");
+        JwtGrantedAuthoritiesConverter authoritiesConverter =
+                new JwtGrantedAuthoritiesConverter();
 
-        JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
-        jwtConverter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
-        return jwtConverter;
-    }
+        authoritiesConverter.setAuthorityPrefix("ROLE_");
+        authoritiesConverter.setAuthoritiesClaimName("role");
 
-    public static class JwtAuthenticationEntryPoint extends BasicAuthenticationEntryPoint {
-        public JwtAuthenticationEntryPoint() {
-            setRealmName("Payment Service");
-        }
-    }
-    @Bean
-    PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(10);
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
+
+        return converter;
     }
 
 }

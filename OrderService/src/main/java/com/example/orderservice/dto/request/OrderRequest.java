@@ -2,6 +2,7 @@ package com.example.orderservice.dto.request;
 
 import com.example.orderservice.enums.PaymentMethod;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -14,13 +15,14 @@ import java.util.List;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderRequest {
-    @NotNull(message = "User ID cannot be blank")
-    Integer userId;
-    @NotNull (message = "Description cannot be blank")
+    @NotNull(message = "Shipping address is required")
     Integer shippingAddress;
-    @NotBlank (message = "Description cannot be blank")
-    List<Integer> selectedItems;
-    @NotBlank (message = "Payment method cannot be blank")
+
+    @NotEmpty(message = "Order items cannot be empty")
+    List<OrderItemRequest> items;
+
+    @NotNull(message = "Payment method is required")
     PaymentMethod paymentMethod;
 
+    String ipAddress;
 }

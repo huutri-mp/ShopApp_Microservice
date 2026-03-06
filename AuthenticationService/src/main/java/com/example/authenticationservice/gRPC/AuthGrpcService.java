@@ -18,7 +18,6 @@ import java.util.List;
 @Slf4j
 public class AuthGrpcService extends AuthServiceGrpc.AuthServiceImplBase {
 
-    private final JwtUtil jwtUtil;
     private final AuthService authService;
 
     @Override
@@ -37,7 +36,7 @@ public class AuthGrpcService extends AuthServiceGrpc.AuthServiceImplBase {
                 return;
             }
 
-            boolean isValid = jwtUtil.validateToken(token);
+            boolean isValid = authService.introspect(token);
             log.info("gRPC Introspect - Token valid: {}", isValid);
 
             auth.IntrospectResponse response = auth.IntrospectResponse.newBuilder()

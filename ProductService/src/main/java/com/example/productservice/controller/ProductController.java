@@ -34,27 +34,17 @@ public class ProductController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long brandId
     ) {
-        log.info(
-                " controller getProducts size={}, page={}, keyword={}, isDesc={}, categoryId={}, brandId={}",
-                size,
-                page,
-                keyword,
-                isDesc,
-                categoryId,
-                brandId
-        );
-
         PagingResponse<ProductResponse> response = productService.getProducts(page, size, keyword, isDesc, categoryId, brandId);
         return response;
 
     }
-//
-//    @GetMapping("/{productId}")
-//    public ResponseEntity<ProductResponse> getProductById(@PathVariable Integer productId) {
-//        log.info("Fetching product with ID: {}", productId);
-//        ProductResponse productResponse = productService.getProductById(productId);
-//        return ResponseEntity.ok(productResponse);
-//    }
+
+    @GetMapping("/{productId}")
+    public ApiResponse<ProductResponse> getProduct(@PathVariable Long productId) {
+        log.info("Fetching product with ID: {}", productId);
+        ProductResponse productResponse = productService.getProductById(productId);
+        return ApiResponse.<ProductResponse>builder().data(productResponse).build();
+    }
 
 
     @PostMapping(
@@ -78,6 +68,7 @@ public class ProductController {
             @RequestPart(value = "productUpdate", required = false) ProductUpdateRequest request,
             @RequestPart(value = "imageFiles", required = false) List<MultipartFile> files
             ) {
+        log.info("Updating product: {}", request.getIsFeatured());
         productService.update(productId, request, files);
         return ApiResponse.<Void>builder()
                 .message("Update product successfully")

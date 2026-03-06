@@ -49,11 +49,12 @@ public class AuthenticationFilter implements WebFilter, Ordered {
             "/auth/logout",
             "/auth/register",
             "/auth/refresh-token",
-            "/auth/outbound/authentication"
+            "/auth/outbound/authentication",
+            "/search"
     );
 
     static List<String> PUBLIC_GET_ONLY = List.of(
-//            "/products/**",
+            "/products/**",
             "/categories/**",
             "/brands/**"
     );

@@ -32,7 +32,6 @@ public class AddressGrpcService extends AddressServiceGrpc.AddressServiceImplBas
                     .setWards(address.getWards() != null ? address.getWards() : "")
                     .setProvince(address.getProvince() != null ? address.getProvince() : "")
                     .setCountry(address.getCountry() != null ? address.getCountry() : "")
-                    .setIsDefault(address.getIsDefault() != null ? address.getIsDefault() : false)
                     .build();
 
             log.info("gRPC GetAddressById - Success for addressId: {}, contactName: {}",

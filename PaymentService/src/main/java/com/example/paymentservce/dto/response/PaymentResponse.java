@@ -15,9 +15,5 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class PaymentResponse {
-    int orderId;
-    String message;
-    PaymentMethod paymentMethod;
-    int amount;
     String url;
 }

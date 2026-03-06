@@ -12,5 +12,5 @@ import lombok.*;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Builder
 public class InitPaymentResponse {
-    private String Url;
+    private String url;
 }

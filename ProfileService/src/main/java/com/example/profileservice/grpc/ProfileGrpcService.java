@@ -162,11 +162,11 @@ public class ProfileGrpcService extends ProfileServiceGrpc.ProfileServiceImplBas
             GetUserProfilesRequest request,
             StreamObserver<GetUserProfilesResponse> responseObserver
     ) {
-        log.info("gRPC GetUserProfiles - keyword: {}", request.getKeywork());
+        log.info("gRPC GetUserProfiles - keyword: {}", request.getKeyword());
 
         try {
             List<UserProfileResponse> profiles =
-                    userProfileService.getUserProfilesInternal(request.getKeywork());
+                    userProfileService.getUserProfilesInternal(request.getKeyword());
 
             GetUserProfilesResponse response = GetUserProfilesResponse.newBuilder()
                     .addAllItems(

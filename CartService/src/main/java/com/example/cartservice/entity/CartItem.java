@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
+
 
 @Entity
 @Getter
@@ -14,18 +16,27 @@ import lombok.experimental.FieldDefaults;
 @Table(name = "cart_items")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CartItem {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    int id;
+    Long id;
+
+    @Column(name = "sku_code", nullable = false)
+    String skuCode;
+
+    @Column(name = "product_id", nullable = false)
+    long productId;
+
+    String name;
+
+    String imageUrl;
+
+    int quantity;
+
+    BigDecimal price;
 
     @ManyToOne
     @JoinColumn(name = "cart_id")
     Cart cart;
 
-    @Column(name = "product_id")
-    int productId;
-
-    int quantity;
-    @Column(name  = "price_at_added")
-    double priceAtAdded;
 }

@@ -18,6 +18,13 @@
     <name>api-gateway</name>
     <description>API Gateway</description>
 
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
     <properties>
         <java.version>17</java.version>
         <spring-cloud.version>2023.0.1</spring-cloud.version>
@@ -78,9 +85,9 @@
 
         <!-- Common Library -->
         <dependency>
-            <groupId>com.example</groupId>
+            <groupId>com.github.huutri-mp</groupId>
             <artifactId>common-lib</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>3f58a02ebd</version>
         </dependency>
 
         <!-- Protobuf -->

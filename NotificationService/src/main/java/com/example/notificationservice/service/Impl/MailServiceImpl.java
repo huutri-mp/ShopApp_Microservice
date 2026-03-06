@@ -1,63 +1,86 @@
 package com.example.notificationservice.service.Impl;
 
-import com.example.commonlib.exception.AppException;
-import com.example.commonlib.exception.ErrorCode;
+import com.example.commonlib.Enum.MailTemplate;
 import com.example.notificationservice.service.MailService;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import com.mailjet.client.MailjetClient;
+import com.mailjet.client.MailjetRequest;
+import com.mailjet.client.MailjetResponse;
+import com.mailjet.client.resource.Emailv31;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.Context;
 
 
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @Primary
 @Service
-@Slf4j
 @RequiredArgsConstructor
+@Slf4j
 public class MailServiceImpl implements MailService {
 
-    private final JavaMailSender mailSender;
-    private final TemplateEngine templateEngine;
+    private final MailjetClient mailjetClient;
 
-    public void send(String to, String templateName, Map<String, Object> data) {
+    @Value("${mailjet.template.ordersuccess}")
+    private String ordersuccess;
+
+    @Value("${mailjet.template.passwordchanged}")
+    private String passwordchanged;
+
+    @Value("${mailjet.template.usercreated}")
+    private String usercreated;
+
+    @Value("${mailjet.template.paymentsuccess}")
+    private String paymentsuccess;
+
+    @Value("${mailjet.template.userupdated}")
+    private String userupdated;
+
+    @Value("${mailjet.template.ordercancelled}")
+    private String ordercancelled;
+
+
+    @Override
+    public void send(
+            String to,
+            MailTemplate template,
+            Map<String, Object> data
+    ) {
+        long templateId;
+        switch (template) {
+            case ORDER_SUCCESS -> templateId = Long.parseLong(ordersuccess);
+            case PASSWORD_CHANGED -> templateId = Long.parseLong(passwordchanged);
+            case USER_CREATED -> templateId = Long.parseLong(usercreated);
+            case PAYMENT_SUCCESS -> templateId = Long.parseLong(paymentsuccess);
+            case USER_UPDATED -> templateId = Long.parseLong(userupdated);
+            case ORDER_CANCLE -> templateId = Long.parseLong(ordercancelled);
+            default -> throw new IllegalArgumentException("Unknown template");
+        }
+
         try {
-            if (to == null || !to.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
-                log.error("Email không hợp lệ: {}", to);
-                throw new AppException(ErrorCode.EMAIL_INVALID);
+            MailjetRequest request = new MailjetRequest(Emailv31.resource)
+                    .property(Emailv31.MESSAGES, new JSONArray()
+                            .put(new JSONObject()
+                                    .put(Emailv31.Message.TO, new JSONArray()
+                                            .put(new JSONObject().put("Email", to)))
+                                    .put(Emailv31.Message.TEMPLATEID, templateId)
+                                    .put(Emailv31.Message.TEMPLATELANGUAGE, true)
+                                    .put(Emailv31.Message.VARIABLES,
+                                            new JSONObject(data))
+                            ));
+
+            MailjetResponse response = mailjetClient.post(request);
+            if (response.getStatus() != 200) {
+                throw new RuntimeException("Mailjet send failed");
             }
 
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(
-                    message,
-                    MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
-                    StandardCharsets.UTF_8.name()
-            );
-
-            Context context = new Context();
-            context.setVariables(data);
-
-            String html = templateEngine.process(templateName, context);
-            helper.setTo(to);
-            helper.setSubject((String) data.getOrDefault("subject", "Thông báo từ hệ thống"));
-            helper.setText(html, true);
-
-            mailSender.send(message);
-            log.info("Email sent to {}", to);
-
-        } catch (MessagingException e) {
-            log.error("Lỗi gửi email đến {} với template {}: {}", to, templateName, e.getMessage(), e);
-            throw new RuntimeException("Gửi email thất bại", e);
-        } catch (Exception ex) {
-            log.error("Lỗi không xác định khi gửi email đến {}: {}", to, ex.getMessage(), ex);
-            throw new RuntimeException("Gửi email thất bại", ex);
+        } catch (Exception e) {
+            log.error("Send mail failed. to={}, template={}", to, template, e);
         }
     }
+
 }

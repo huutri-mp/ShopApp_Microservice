@@ -14,8 +14,6 @@ public class ProductCreationRequest {
 
     private String description;
 
-    private Boolean active;
-
     @NotNull
     private Long categoryId;
 

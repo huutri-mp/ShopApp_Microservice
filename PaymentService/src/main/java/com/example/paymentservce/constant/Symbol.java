@@ -1,4 +1,4 @@
-package com.example.paymentservce.constan;
+package com.example.paymentservce.constant;
 
 public class Symbol {
     public static final String EQUAL = "=";

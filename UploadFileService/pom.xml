@@ -13,6 +13,12 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>UploadFileService</name>
     <description>UploadFileService</description>
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
     <url/>
     <licenses>
         <license/>
@@ -103,9 +109,9 @@
 
         <!-- Common lib -->
         <dependency>
-            <groupId>com.example</groupId>
+            <groupId>com.github.huutri-mp</groupId>
             <artifactId>common-lib</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>6fc06b9c53</version>
         </dependency>
 
     </dependencies>
@@ -151,8 +157,10 @@
                 <artifactId>protobuf-maven-plugin</artifactId>
                 <version>0.6.1</version>
                 <configuration>
+                    <!--suppress UnresolvedMavenProperty -->
                     <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
                     <pluginId>grpc-java</pluginId>
+                    <!--suppress UnresolvedMavenProperty -->
                     <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
                 </configuration>
                 <executions>

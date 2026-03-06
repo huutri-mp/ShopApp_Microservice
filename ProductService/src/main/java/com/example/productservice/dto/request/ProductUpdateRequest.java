@@ -17,5 +17,7 @@ public class ProductUpdateRequest {
 
     private List<Long> removedImageIds;
 
+    private Boolean isFeatured;
+
     private List<ProductVariantRequest> variants;
 }

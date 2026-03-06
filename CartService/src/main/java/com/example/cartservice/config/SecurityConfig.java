@@ -3,6 +3,7 @@ package com.example.cartservice.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -23,22 +24,6 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationEn
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    // Các endpoint internal dùng Basic Auth
-    private static final String[] INTERNAL_ENDPOINTS = {
-        "/api/v1/internal/cart/**",
-    };
-
-    // Các endpoint public không cần xác thực
-    private static final String[] PUBLIC_ENDPOINTS = {
-        "/api/v1/user/cart/**",
-    };
-
-    @Value("${auth.username}")
-    private String authUsername;
-
-    @Value("${auth.password}")
-    private String authPassword;
-
     private final CustomJwtDecoder customJwtDecoder;
 
     public SecurityConfig(CustomJwtDecoder customJwtDecoder) {
@@ -49,15 +34,11 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(INTERNAL_ENDPOINTS).authenticated()
                         .anyRequest().authenticated()
                 )
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .httpBasic(httpBasic -> httpBasic
-                        .authenticationEntryPoint(basicAuthenticationEntryPoint())
-                        .realmName("Cart Service Internal API")
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwtConfigurer -> jwtConfigurer
@@ -71,41 +52,16 @@ public class SecurityConfig {
     }
 
     @Bean
-    public InMemoryUserDetailsManager internalUserDetailsService(PasswordEncoder passwordEncoder) {
-        UserDetails serviceUser = User.withUsername(authUsername)
-                .password(passwordEncoder.encode(authPassword))
-                .roles("INTERNAL_SERVICE")
-                .build();
-
-        return new InMemoryUserDetailsManager(serviceUser);
-    }
-
-    @Bean
-    public BasicAuthenticationEntryPoint basicAuthenticationEntryPoint() {
-        BasicAuthenticationEntryPoint entryPoint = new BasicAuthenticationEntryPoint();
-        entryPoint.setRealmName("Cart Service Internal API");
-        return entryPoint;
-    }
-
-    @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        authoritiesConverter.setAuthorityPrefix("");
-        authoritiesConverter.setAuthoritiesClaimName("authorities");
+        JwtGrantedAuthoritiesConverter authoritiesConverter =
+                new JwtGrantedAuthoritiesConverter();
 
-        JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
-        jwtConverter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
-        return jwtConverter;
-    }
+        authoritiesConverter.setAuthorityPrefix("ROLE_");
+        authoritiesConverter.setAuthoritiesClaimName("role");
 
-    public static class JwtAuthenticationEntryPoint extends BasicAuthenticationEntryPoint {
-        public JwtAuthenticationEntryPoint() {
-            setRealmName("Cart Service");
-        }
-    }
-    @Bean
-    PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(10);
-    }
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
 
+        return converter;
+    }
 }

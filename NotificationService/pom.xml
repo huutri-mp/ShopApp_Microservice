@@ -6,13 +6,19 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.5.3</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
     <groupId>com.example</groupId>
     <artifactId>NotificationService</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>NotificationService</name>
     <description>NotificationService</description>
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
     <url/>
     <licenses>
         <license/>
@@ -106,9 +112,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.example</groupId>
+            <groupId>com.github.huutri-mp</groupId>
             <artifactId>common-lib</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>08e99db96a</version>
         </dependency>
 
         <dependency>
@@ -117,12 +123,16 @@
             <version>5.2.1</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
 
         <!-- Common Library -->
         <dependency>
-            <groupId>com.example</groupId>
+            <groupId>com.github.huutri-mp</groupId>
             <artifactId>common-lib</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>4588f72b59</version>
         </dependency>
 
     </dependencies>

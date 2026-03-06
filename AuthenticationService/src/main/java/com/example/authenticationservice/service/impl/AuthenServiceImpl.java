@@ -6,6 +6,7 @@ import com.example.authenticationservice.entity.AuthenUser;
 import com.example.authenticationservice.entity.InvalidatedToken;
 import com.example.authenticationservice.entity.RefreshToken;
 import com.example.authenticationservice.service.*;
+import com.example.commonlib.Enum.MailTemplate;
 import com.example.commonlib.dto.PagingResponse;
 import com.example.commonlib.exception.AppException;
 import com.example.commonlib.exception.ErrorCode;
@@ -17,6 +18,7 @@ import com.example.authenticationservice.repository.gRPCClient.ProfileGrpcClient
 import com.example.authenticationservice.utill.JwtUtil;
 import com.nimbusds.jose.JOSEException;
 import feign.FeignException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
@@ -36,42 +38,28 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.text.ParseException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Slf4j
 @Service
 @Primary
+@RequiredArgsConstructor
 public class AuthenServiceImpl implements AuthService {
 
-    @Autowired
-    private AuthRepository authRepository;
-    @Autowired
-    private RefreshTokenService refreshTokenService;
-    @Autowired
-    private ProfileGrpcClient profileGrpcClient;
-    @Autowired
-    private UploadGrpcClient uploadClient;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private InvalidatedTokenRepository invalidatedTokenRepository;
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    private KafkaTemplate<String, Object> kafkaTemplate;
-
-    @Autowired
-    private FacebookIdentityService facebookIdentityService;
-
-    @Autowired
-    private GoogleUserService googleUserService;
-
-    @Autowired
-    private FacebookUserService facebookUserService;
-
-    @Autowired
-    private GoogleIdentityService googleIdentityService;
+    private final AuthRepository authRepository;
+    private final RefreshTokenService refreshTokenService;
+    private final ProfileGrpcClient profileGrpcClient;
+    private final UploadGrpcClient uploadClient;
+    private final PasswordEncoder passwordEncoder;
+    private final InvalidatedTokenRepository invalidatedTokenRepository;
+    private final JwtUtil jwtUtil;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final FacebookIdentityService facebookIdentityService;
+    private final GoogleUserService googleUserService;
+    private final FacebookUserService facebookUserService;
+    private final GoogleIdentityService googleIdentityService;
 
     @Transactional
     public String createUser(UserCreationRequest request, MultipartFile avt) {
@@ -189,23 +177,22 @@ public class AuthenServiceImpl implements AuthService {
                 .build();
     }
 
-    public IntrospectResponse introspect(IntrospectRequest request) {
-        String token = request.getToken();
+    public Boolean introspect(String token) {
         System.out.println("token:" + token );
         if (token == null || token.isEmpty()) {
             throw new AppException(ErrorCode.TOKEN_PARSING_ERROR);
         }
 
-        IntrospectResponse introspectResponse = new IntrospectResponse();
+        boolean isValid = false;
 
         try {
-            introspectResponse.setValid(jwtUtil.validateToken(token));
+            isValid = (jwtUtil.validateToken(token));
         } catch (ParseException e) {
             throw new AppException(ErrorCode.AUTH_TOKEN_INVALID);
         } catch (JOSEException e) {
             throw new AppException(ErrorCode.AUTH_TOKEN_INVALID);
         }
-        return introspectResponse;
+        return isValid;
     }
     public LoginResponse outboundAuthenticate(String code, String provider) {
         System.out.println("code" + code);
@@ -299,12 +286,15 @@ public class AuthenServiceImpl implements AuthService {
         authRepository.save(authenUser);
         Map<String, Object> data = new HashMap<>();
         data.put("fullName", userName);
-        data.put("changeTime", LocalDate.now());
-
+        data.put(
+                "changeTime",
+                LocalDateTime.now()
+                        .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
+        );
         NotificationEvent notificationEvent = NotificationEvent.builder()
                 .channel("email")
                 .recipient(userProfileResponseInternal.getEmail())
-                .template("password_changed")
+                .template(MailTemplate.PASSWORD_CHANGED)
                 .data(data)
                 .build();
         try {
@@ -316,7 +306,7 @@ public class AuthenServiceImpl implements AuthService {
         return "Password changed successfully";
     }
 
-    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN'")
+    @PreAuthorize("hasRole('ADMIN')")
     public String updateAuthUser(Integer userId, UpdateAuthUser updateAuthUser) {
         AuthenUser authenUser = authRepository.getUserById(userId);
         if (authenUser == null) {

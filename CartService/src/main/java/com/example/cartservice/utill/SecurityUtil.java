@@ -9,7 +9,7 @@ public class SecurityUtil {
     public static Integer getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
-            return null; // hoặc throw custom exception nếu cần
+            return null;
         }
         Object userIdObj = jwt.getClaim("userId");
         if (userIdObj instanceof Number number) {
