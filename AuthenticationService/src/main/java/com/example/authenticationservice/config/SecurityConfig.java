@@ -41,19 +41,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
-                .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-                        .ignoringRequestMatchers(
-                        "/api/v1/auth/register",
-                          "/api/v1/auth/login",
-                          "/api/v1/auth/outbound/authentication")
-                )
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(request -> request
                     .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                     .anyRequest().authenticated()
                 )
-
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwtConfigurer -> jwtConfigurer

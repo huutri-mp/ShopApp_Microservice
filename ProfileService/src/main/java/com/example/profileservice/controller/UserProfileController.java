@@ -25,7 +25,6 @@ public class UserProfileController {
     public ApiResponse<UserProfileResponse> getMyInfo() {
         ApiResponse apiResponse = new ApiResponse();
         UserProfileResponse userProfileResponse = userProfileService.getMyInfo();
-        System.out.println(userProfileResponse.toString());
         apiResponse.setData(userProfileResponse);
         return apiResponse;
     }

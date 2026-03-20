@@ -2,7 +2,6 @@ package com.example.profileservice.service.Impl;
 
 import com.example.commonlib.Enum.MailTemplate;
 import com.example.commonlib.dto.NotificationEvent;
-import com.example.commonlib.dto.PagingResponse;
 import com.example.profileservice.dto.request.ProfileCreationRequest;
 import com.example.profileservice.dto.request.ProfileUpdateRequest;
 import com.example.profileservice.dto.response.UserProfileResponse;
@@ -28,6 +27,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,7 +101,8 @@ public class UserProfileServiceImpl implements UserProfileService {
         //kafka
         Map<String, Object> data = new HashMap<>();
         data.put("fullName", request.getFullName());
-        data.put("registerTime", LocalDate.now());
+        data.put("registerTime", LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
 
         NotificationEvent notificationEvent = NotificationEvent.builder()
                 .channel("email")
@@ -180,7 +182,9 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         Map<String, Object> data = new HashMap<>();
         data.put("fullName", userProfile.getFullName());
-        data.put("updateTime", LocalDate.now());
+        data.put("updateTime",
+                LocalDateTime.now()
+                        .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
 
         NotificationEvent notificationEvent = NotificationEvent.builder()
                 .channel("email")

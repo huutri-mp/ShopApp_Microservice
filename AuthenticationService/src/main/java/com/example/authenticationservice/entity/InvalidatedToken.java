@@ -9,6 +9,7 @@ import java.util.Date;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.springframework.scheduling.annotation.Scheduled;
 
 @Getter
 @Setter

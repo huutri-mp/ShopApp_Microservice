@@ -138,6 +138,7 @@ public class ProductServiceImpl implements ProductService {
                 updated.add(pv);
             } else {
                 ProductVariant pv = productVariantMapper.toEntity(v);
+                pv.setSkuCode(skuUtil.generateSku(p));
                 pv.setProduct(p);
                 updated.add(pv);
             }

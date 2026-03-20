@@ -50,12 +50,12 @@ public class UserAggregationService {
 
 
         Profile.GetUserProfilesResponse
-            profileResponse =  profileServiceStub.getUserProfiles(profileRequest);
+                profileResponse =  profileServiceStub.getUserProfiles(profileRequest);
 
         List<UserProfileResponse>  profileUsers =
-                    profileResponse.getItemsList().stream()
-                            .map(this::mapToUserProfileFromProfileGrpc)
-                            .toList();
+                profileResponse.getItemsList().stream()
+                        .map(this::mapToUserProfileFromProfileGrpc)
+                        .toList();
 
         if (profileUsers.isEmpty()) {
             return PagingResponse.<UserProfileResponse>builder()
@@ -69,9 +69,9 @@ public class UserAggregationService {
         }
 
         List<Integer> profileUserIds =
-                    profileUsers.stream()
-                            .map(p -> (int) p.getUserId())
-                            .toList();
+                profileUsers.stream()
+                        .map(p -> (int) p.getUserId())
+                        .toList();
 
         Auth.GetUsersRequest.Builder authRequestBuilder =
                 Auth.GetUsersRequest.newBuilder()

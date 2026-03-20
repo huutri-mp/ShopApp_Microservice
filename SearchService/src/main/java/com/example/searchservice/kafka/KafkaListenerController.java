@@ -14,7 +14,7 @@ public class KafkaListenerController {
 
     private final ProductSearchService productSearchService;
 
-    @KafkaListener(topics = "product-events")
+    @KafkaListener(topics = "product-events", groupId = "search-group")
     public void handleProductEvent(ProductEvent event) {
         log.info("Received product created event: {}", event);
          switch (event.getEventType()) {

@@ -46,8 +46,11 @@ public class RefreshTokenImpl implements RefreshTokenService {
         if (refreshToken == null)
             return;
 
+        if (refreshToken.getExpiresAt().after(new Date())){
+            refreshToken.setRevokedAt(new Date());
+        }
+
         refreshToken.setIsValid(false);
-        refreshToken.setRevokedAt(new Date(0));
         refreshTokenRepository.save(refreshToken);
     }
 }

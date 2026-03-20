@@ -35,6 +35,11 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationFilter implements WebFilter, Ordered {
 
+    private static final List<String> CORS_ALLOWED_ORIGINS = List.of(
+            "http://localhost:3000",
+            "https://shop-app-fe-p5o9.vercel.app"
+    );
+
     AuthService authService;
     ObjectMapper objectMapper;
 
@@ -50,7 +55,7 @@ public class AuthenticationFilter implements WebFilter, Ordered {
             "/auth/register",
             "/auth/refresh-token",
             "/auth/outbound/authentication",
-            "/search"
+            "/search/**"
     );
 
     static List<String> PUBLIC_GET_ONLY = List.of(
@@ -68,7 +73,13 @@ public class AuthenticationFilter implements WebFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
 
+        exchange.getResponse().beforeCommit(() -> {
+            applyCorsHeaders(exchange, exchange.getResponse());
+            return Mono.empty();
+        });
+
         if (isPreflight(request) || isPublic(request)) {
+            log.debug("Skipping authentication for {}", request.getURI());
             return chain.filter(exchange);
         }
 
@@ -100,20 +111,20 @@ public class AuthenticationFilter implements WebFilter, Ordered {
     private Mono<Void> authenticate(ServerWebExchange exchange, WebFilterChain chain) {
         String token = extractToken(exchange.getRequest());
         if (token == null) {
-            return unauthenticated(exchange.getResponse(), "Missing token", HttpStatus.UNAUTHORIZED);
+            return unauthenticated(exchange, "Missing token", HttpStatus.UNAUTHORIZED);
         }
 
         return authService.introspect(token)
                 .flatMap(result -> {
                     if (!result.isValid()) {
-                        return unauthenticated(exchange.getResponse(), "Token invalid", HttpStatus.UNAUTHORIZED);
+                        return unauthenticated(exchange, "Token invalid", HttpStatus.UNAUTHORIZED);
                     }
 
                     try {
                         String role = extractRole(token);
                         if (isForbidden(exchange.getRequest(), role)) {
                             return unauthenticated(
-                                    exchange.getResponse(),
+                                    exchange,
                                     "Forbidden: Admin role required",
                                     HttpStatus.FORBIDDEN
                             );
@@ -122,7 +133,7 @@ public class AuthenticationFilter implements WebFilter, Ordered {
                         return chain.filter(exchange);
 
                     } catch (ParseException e) {
-                        return unauthenticated(exchange.getResponse(), "Invalid token", HttpStatus.UNAUTHORIZED);
+                        return unauthenticated(exchange, "Invalid token", HttpStatus.UNAUTHORIZED);
                     }
                 });
     }
@@ -150,9 +161,10 @@ public class AuthenticationFilter implements WebFilter, Ordered {
         return pathMatcher.match(usersPattern, path) && !"ADMIN".equals(role);
     }
 
-    private Mono<Void> unauthenticated(ServerHttpResponse response,
+    private Mono<Void> unauthenticated(ServerWebExchange exchange,
                                        String message,
                                        HttpStatus status) {
+        ServerHttpResponse response = exchange.getResponse();
         ApiResponse<?> apiResponse =
                 ApiResponse.builder()
                         .code(status.value())
@@ -161,6 +173,7 @@ public class AuthenticationFilter implements WebFilter, Ordered {
 
         response.setStatusCode(status);
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        applyCorsHeaders(exchange, response);
 
         try {
             byte[] body = objectMapper.writeValueAsBytes(apiResponse);
@@ -168,5 +181,16 @@ public class AuthenticationFilter implements WebFilter, Ordered {
         } catch (JsonProcessingException e) {
             return response.setComplete();
         }
+    }
+
+    private void applyCorsHeaders(ServerWebExchange exchange, ServerHttpResponse response) {
+        String origin = exchange.getRequest().getHeaders().getOrigin();
+        if (origin == null || !CORS_ALLOWED_ORIGINS.contains(origin)) {
+            return;
+        }
+
+        response.getHeaders().set(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        response.getHeaders().set(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+        response.getHeaders().add(HttpHeaders.VARY, HttpHeaders.ORIGIN);
     }
 }

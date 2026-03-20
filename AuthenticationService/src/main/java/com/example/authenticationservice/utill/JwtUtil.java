@@ -61,7 +61,6 @@ public class JwtUtil {
         }
     }
 
-
     public boolean validateToken(String token) throws ParseException, JOSEException {
         JWSVerifier jwsVerifier = new MACVerifier(secretKey.getBytes());
         SignedJWT signedJWT = SignedJWT.parse(token);
@@ -71,34 +70,6 @@ public class JwtUtil {
                 && expirationTime.after(new Date())
                 && !invalidatedTokenRepository.existsById(
                 signedJWT.getJWTClaimsSet().getJWTID());
-    }
-
-    public SignedJWT verifyToken(String token, Boolean isRefresh) throws JOSEException {
-        try {
-            JWSVerifier jwsVerifier = new MACVerifier(secretKey.getBytes());
-            SignedJWT signedJWT = SignedJWT.parse(token);
-
-            Date expirationTime = (isRefresh)
-                    ? new Date(signedJWT
-                    .getJWTClaimsSet()
-                    .getExpirationTime()
-                    .toInstant()
-                    .toEpochMilli())
-                    : signedJWT.getJWTClaimsSet().getExpirationTime();
-            String jti = signedJWT.getJWTClaimsSet().getJWTID();
-
-            boolean isSignatureValid = signedJWT.verify(jwsVerifier);
-            boolean isNotExpired = expirationTime.after(new Date());
-            boolean isNotRevoked = !invalidatedTokenRepository.existsById(jti);
-
-            if (!(isSignatureValid && isNotExpired && isNotRevoked)) {
-                throw new AppException(ErrorCode.AUTH_TOKEN_INVALID);
-            }
-
-            return signedJWT;
-        } catch (ParseException e) {
-            throw new AppException(ErrorCode.TOKEN_PARSING_ERROR);
-        }
     }
 
 }

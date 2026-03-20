@@ -64,13 +64,9 @@ public class AuthController {
             .httpOnly(true)
             .secure(true)
             .path("/")
-            .maxAge(REFRESH_VALID_DURATION /1000) // convert ms -> s
+            .maxAge(REFRESH_VALID_DURATION /1000)
             .sameSite("none")
             .build();
-
-        CookieCsrfTokenRepository csrfRepo = CookieCsrfTokenRepository.withHttpOnlyFalse();
-        CsrfToken csrfToken = csrfRepo.generateToken(httpRequest);
-        csrfRepo.saveToken(csrfToken, httpRequest, httpResponse);
 
         ApiResponse<String> apiResponse = new ApiResponse<>();
         apiResponse.setMessage("Đăng nhập thành công");
@@ -164,6 +160,7 @@ public class AuthController {
     @PostMapping("/refresh-token")
     public ResponseEntity refreshToken(@CookieValue(name = "refresh_token", required = false) String request) {
 
+        log.info("Refresh token request: {}", request);
         LoginResponse loginResponse = authService.refreshToken(request);
         String token = loginResponse.getToken();
 

@@ -17,6 +17,7 @@ import com.example.authenticationservice.repository.gRPCClient.*;
 import com.example.authenticationservice.repository.gRPCClient.ProfileGrpcClient;
 import com.example.authenticationservice.utill.JwtUtil;
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jwt.SignedJWT;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -101,7 +102,6 @@ public class AuthenServiceImpl implements AuthService {
                 .gender(request.getGender())
                 .build();
 
-        System.out.println( "profile create"+ profileCreationRequest);
         try {
             profileGrpcClient.createProfile(profileCreationRequest);
         } catch (Exception e) {
@@ -140,18 +140,27 @@ public class AuthenServiceImpl implements AuthService {
 
     public String logout(LogoutRequest request) {
         try {
-            var signToken = jwtUtil.verifyToken(request.getAccessToken(), true);
+            if (request == null) {
+                throw new AppException(ErrorCode.INVALID_REQUEST);
+            }
 
-            String jit = signToken.getJWTClaimsSet().getJWTID();
-            Date expiryTime = signToken.getJWTClaimsSet().getExpirationTime();
+            refreshTokenService.revokeToken(request.getRefreshToken());
+
+            SignedJWT signedJWT = SignedJWT.parse(request.getAccessToken());
+            String jit = signedJWT.getJWTClaimsSet().getJWTID();
+            Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+
+            if(expiryTime.before(new Date())) {
+                return "Logout Successful";
+            }
 
             InvalidatedToken invalidatedToken = new InvalidatedToken();
             invalidatedToken.setId(jit);
             invalidatedToken.setExpiryTime(expiryTime);
 
             invalidatedTokenRepository.save(invalidatedToken);
-            refreshTokenService.revokeToken(request.getRefreshToken());
-        } catch (JOSEException | ParseException e) {
+
+        } catch ( ParseException e) {
             throw new AppException(ErrorCode.TOKEN_PARSING_ERROR);
         }
         return "Logout successful";
@@ -178,11 +187,9 @@ public class AuthenServiceImpl implements AuthService {
     }
 
     public Boolean introspect(String token) {
-        System.out.println("token:" + token );
         if (token == null || token.isEmpty()) {
             throw new AppException(ErrorCode.TOKEN_PARSING_ERROR);
         }
-
         boolean isValid = false;
 
         try {
